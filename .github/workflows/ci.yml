@@ -37,7 +37,8 @@ jobs:
             ninja-build \
             python3-pip \
             lcov \
-            protobuf-compiler
+            protobuf-compiler \
+            librtlsdr-dev
 
       - name: Install Conan
         run: |
@@ -98,7 +99,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          brew install cmake ninja protobuf
+          brew install cmake ninja protobuf librtlsdr
 
       - name: Install Conan
         run: |

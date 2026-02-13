@@ -1,6 +1,6 @@
-#include "RealTimeGraphs/SpectrumWidget.h"
-#include "RealTimeGraphs/ColorBarWidget.h"
-#include "RealTimeGraphs/CommonGuiUtils.h"
+#include "SpectrumWidget.h"
+#include "ColorBarWidget.h"
+#include "CommonGuiUtils.h"
 
 #include <GeneralLogger.h>
 
@@ -291,13 +291,13 @@ void SpectrumWidget::paintEvent(QPaintEvent* /*event*/)
 // Drawing helpers
 // ============================================================================
 
-void SpectrumWidget::drawBackground(QPainter& painter, const QRect& area) const 
+void SpectrumWidget::drawBackground(QPainter& painter, const QRect& area) const
 {
    painter.fillRect(rect(), QColor(25, 25, 30));
    painter.fillRect(area, QColor(15, 15, 20));
 }
 
-void SpectrumWidget::drawGrid(QPainter& painter, const QRect& area) const 
+void SpectrumWidget::drawGrid(QPainter& painter, const QRect& area) const
 {
    painter.setPen(QPen(QColor(60, 60, 70), 1, Qt::DotLine));
 
@@ -319,7 +319,7 @@ void SpectrumWidget::drawGrid(QPainter& painter, const QRect& area) const
    }
 }
 
-void SpectrumWidget::drawSpectrum(QPainter& painter, const QRect& area) const 
+void SpectrumWidget::drawSpectrum(QPainter& painter, const QRect& area) const
 {
    std::vector<float> snapshot;
    {
@@ -410,7 +410,7 @@ void SpectrumWidget::drawSpectrum(QPainter& painter, const QRect& area) const
    painter.setRenderHint(QPainter::Antialiasing, false);
 }
 
-void SpectrumWidget::drawMaxHold(QPainter& painter, const QRect& area) const 
+void SpectrumWidget::drawMaxHold(QPainter& painter, const QRect& area) const
 {
    if (!_maxHoldEnabled)
    {

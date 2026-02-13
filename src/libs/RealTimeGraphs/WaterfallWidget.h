@@ -4,7 +4,7 @@
 // Project headers
 #include "CircularBuffer.h"
 #include "PlotCursorOverlay.h"
-#include "RealTimeGraphs/ColorMap.h"
+#include "ColorMap.h"
 
 // Third-party headers
 #include <QMouseEvent>
@@ -37,7 +37,7 @@ class WaterfallWidget : public QWidget
 public:
    /// @param historyRows  Number of time rows to keep in history.
    /// @param parent       Parent widget.
-   explicit WaterfallWidget(int historyRows = 256, QWidget* parent = nullptr);
+   explicit WaterfallWidget(QWidget* parent = nullptr, int historyRows = 256);
 
    /// Append a new spectrum row.  The vector is copied.
    /// Thread-safe — can be called from a producer thread.

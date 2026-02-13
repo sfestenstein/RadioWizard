@@ -57,6 +57,12 @@ class RadioWizardConan(ConanFile):
       if self.settings.os in ["Linux", "FreeBSD"]:
          self.requires("libsystemd/255.10", override=True)
 
+      # FFT
+      self.requires("fftw/3.3.10")
+
+      # DSP
+      self.requires("liquid-dsp/1.6.0")
+
       # Qt 6 — for RealTimeGraphs widget library
       self.requires("qt/6.10.1")
 

@@ -2,7 +2,7 @@
 #define COLORBARWIDGET_H_
 
 // Project headers
-#include "RealTimeGraphs/ColorMap.h"
+#include "ColorMap.h"
 
 // Third-party headers
 #include <QSpinBox>

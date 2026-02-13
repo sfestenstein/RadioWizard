@@ -29,7 +29,7 @@ class ConstellationWidget : public QWidget
 public:
    /// @param historySize  Number of recent I/Q samples to display.
    /// @param parent       Parent widget.
-   explicit ConstellationWidget(int historySize = 4096, QWidget* parent = nullptr);
+   explicit ConstellationWidget(QWidget* parent = nullptr, int historySize = 4096);
 
    /// Replace the current constellation data.  Samples are appended to the
    /// persistence buffer.  Thread-safe.

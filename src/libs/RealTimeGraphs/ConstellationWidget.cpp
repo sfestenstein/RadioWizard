@@ -1,4 +1,4 @@
-#include "RealTimeGraphs/ConstellationWidget.h"
+#include "ConstellationWidget.h"
 
 #include <QPainter>
 #include <QPaintEvent>
@@ -13,7 +13,7 @@ namespace RealTimeGraphs
 // Construction
 // ============================================================================
 
-ConstellationWidget::ConstellationWidget(int historySize, QWidget* parent)
+ConstellationWidget::ConstellationWidget(QWidget* parent, int historySize)
    : QWidget(parent)
    , _points(static_cast<std::size_t>(historySize))
 {
@@ -123,7 +123,7 @@ void ConstellationWidget::paintEvent(QPaintEvent* /*event*/)
    // Axis labels
    painter.setPen(QColor(180, 180, 190));
    QFont font = painter.font();
-   font.setPointSize(8);
+   font.setPointSize(10);
    painter.setFont(font);
 
    painter.drawText(plotArea.left(), plotArea.bottom() + 5,
@@ -171,7 +171,7 @@ void ConstellationWidget::drawGrid(QPainter& painter, const QRect& area)
    // Draw axis tick labels
    painter.setPen(QColor(140, 140, 150));
    QFont font = painter.font();
-   font.setPointSize(7);
+   font.setPointSize(10);
    painter.setFont(font);
 
    for (int i = -2; i <= 2; ++i)

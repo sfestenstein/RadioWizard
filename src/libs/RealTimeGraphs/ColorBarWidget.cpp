@@ -1,4 +1,4 @@
-#include "RealTimeGraphs/ColorBarWidget.h"
+#include "ColorBarWidget.h"
 
 #include <QLabel>
 #include <QPainter>

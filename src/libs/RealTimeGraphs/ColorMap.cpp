@@ -1,4 +1,4 @@
-#include "RealTimeGraphs/ColorMap.h"
+#include "ColorMap.h"
 
 #include <algorithm>
 #include <cmath>

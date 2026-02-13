@@ -49,6 +49,9 @@ sudo apt-get install -y \
    libxcb-xkb-dev \
    libxrender-dev
 
+# RTL-SDR driver library (system dependency — not available via Conan)
+sudo apt-get install -y librtlsdr-dev
+
 pip3 install conan
 ```
 
@@ -60,6 +63,9 @@ xcode-select --install
 
 # Install Homebrew packages
 brew install cmake ninja python lcov
+
+# RTL-SDR driver library (system dependency — not available via Conan)
+brew install librtlsdr
 
 pip3 install conan
 ```

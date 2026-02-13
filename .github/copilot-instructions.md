@@ -9,7 +9,7 @@ RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spe
 - **Package Manager**: Conan 2.0
 - **Compiler**: GCC 13+ or Clang 15+ (Linux/macOS)
 - **Testing**: Google Test
-- **Dependencies**: spdlog, protobuf, ZeroMQ (cppzmq), CZMQ, Zyre, Qt 6
+- **Dependencies**: spdlog, protobuf, ZeroMQ (cppzmq), CZMQ, Zyre, Qt 6, FFTW3, liquid-dsp, librtlsdr (system)
 
 ## Project Structure
 
@@ -220,6 +220,9 @@ When suggesting code, these libraries are available:
 | CZMQ | `<czmq.h>` | `zsock_t`, `zactor_t` |
 | Zyre | `<zyre.h>` | `zyre_t` |
 | Qt 6 | `<QWidget>`, `<QPainter>` | `Qt6::Core`, `Qt6::Gui`, `Qt6::Widgets`, `Qt6::OpenGLWidgets` |
+| FFTW3 | `<fftw3.h>` | `fftw_plan`, `fftw_execute()` |
+| liquid-dsp | `<liquid/liquid.h>` | `firfilt_crcf`, `nco_crcf`, etc. |
+| RTL-SDR | `<rtl-sdr.h>` | `rtlsdr_open()`, `rtlsdr_read_async()` (system dep, `PkgConfig::RTLSDR`) |
 | Google Test | `<gtest/gtest.h>` | `TEST()`, `EXPECT_EQ()` |
 
 ## Testing Patterns

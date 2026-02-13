@@ -9,11 +9,11 @@
 // =============================================================================
 
 // Project headers
-#include "CommonUtils/GeneralLogger.h"
-#include "RealTimeGraphs/ColorMap.h"
-#include "RealTimeGraphs/ConstellationWidget.h"
-#include "RealTimeGraphs/SpectrumWidget.h"
-#include "RealTimeGraphs/WaterfallWidget.h"
+#include "GeneralLogger.h"
+#include "ColorMap.h"
+#include "ConstellationWidget.h"
+#include "SpectrumWidget.h"
+#include "WaterfallWidget.h"
 
 // Third-party headers
 #include <QApplication>
@@ -117,8 +117,8 @@ int main(int argc, char* argv[]) // NOLINT
 
    // ---- Create widgets ----
    auto* spectrum = new RealTimeGraphs::SpectrumWidget;
-   auto* waterfall = new RealTimeGraphs::WaterfallWidget(256);
-   auto* constellation = new RealTimeGraphs::ConstellationWidget(8192);
+   auto* waterfall = new RealTimeGraphs::WaterfallWidget(nullptr, 256);
+   auto* constellation = new RealTimeGraphs::ConstellationWidget(nullptr, 8192);
 
    spectrum->setDbRange(-100.0F, 0.0F);
    waterfall->setDbRange(-100.0F, 0.0F);
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) // NOLINT
       abCombo->addItem(QString::fromStdString(RealTimeGraphs::ColorMap::paletteName(pal)),
                        static_cast<int>(i));
    }
-   QObject::connect(abCombo, &QComboBox::currentIndexChanged, [spectrum, waterfall](int idx) 
+   QObject::connect(abCombo, &QComboBox::currentIndexChanged, [spectrum, waterfall](int idx)
    {
       auto pal = RealTimeGraphs::ColorMap::paletteAt(static_cast<std::size_t>(idx));
       spectrum->setColorMap(pal);
@@ -218,7 +218,7 @@ int main(int argc, char* argv[]) // NOLINT
    fadeSlider->setValue(50);     // 5.0 s default
    fadeSlider->setToolTip("Persistence fade time\n0.5 s (bottom) – 30 s (top)");
    fadeSlider->setFixedWidth(30);
-   QObject::connect(fadeSlider, &QSlider::valueChanged, [constellation, fadeLabel](int val) 
+   QObject::connect(fadeSlider, &QSlider::valueChanged, [constellation, fadeLabel](int val)
    {
       const float seconds = static_cast<float>(val) / 10.0F;
       constellation->setFadeTime(seconds);
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) // NOLINT
    constexpr int TIMER_INTERVAL_MS = 33; // ~30 FPS
 
    QTimer timer;
-   QObject::connect(&timer, &QTimer::timeout, [&]() 
+   QObject::connect(&timer, &QTimer::timeout, [&]()
    {
       // Spectrum & waterfall share the same data
       auto mag = generateSpectrum(frame);

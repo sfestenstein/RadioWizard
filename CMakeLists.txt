@@ -132,6 +132,11 @@ find_package(spdlog REQUIRED)
 find_package(protobuf REQUIRED)
 find_package(cppzmq REQUIRED)
 
+# RTL-SDR — system dependency (not available via Conan)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(RTLSDR REQUIRED IMPORTED_TARGET librtlsdr)
+message(STATUS "Found librtlsdr: ${RTLSDR_VERSION}")
+
 # Conan CMakeDeps generates Qt6Config.cmake which:
 #  1. Creates component targets (Qt6::Core, Qt6::Gui, Qt6::Widgets, …)
 #  2. Includes Qt's native build modules (Qt6CoreMacros.cmake for AUTOMOC,
@@ -186,6 +191,7 @@ add_subdirectory(src/libs/RealTimeGraphs)
 
 # Applications
 add_subdirectory(src/TestApps)
+add_subdirectory(src/RadioWizardMain)
 
 # Tests
 if(BUILD_TESTS)
@@ -226,5 +232,6 @@ message(STATUS "  Coverage:         ${ENABLE_COVERAGE}")
 message(STATUS "  Sanitizers:       ${ENABLE_SANITIZERS}")
 message(STATUS "  Clang-tidy:       ${ENABLE_CLANG_TIDY}")
 message(STATUS "  Qt6:              ${Qt6_VERSION}")
+message(STATUS "  librtlsdr:        ${RTLSDR_VERSION}")
 message(STATUS "================================")
 message(STATUS "")

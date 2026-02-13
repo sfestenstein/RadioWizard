@@ -3,7 +3,7 @@
 
 // Project headers
 #include "PlotCursorOverlay.h"
-#include "RealTimeGraphs/ColorMap.h"
+#include "ColorMap.h"
 
 // Third-party headers
 #include <QMouseEvent>

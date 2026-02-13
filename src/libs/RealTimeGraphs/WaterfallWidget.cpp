@@ -19,7 +19,7 @@ namespace RealTimeGraphs
 // Construction
 // ============================================================================
 
-WaterfallWidget::WaterfallWidget(int historyRows, QWidget* parent)
+WaterfallWidget::WaterfallWidget(QWidget* parent, int historyRows)
    : QWidget(parent)
    , _historyRows{historyRows}
    , _rows(static_cast<std::size_t>(historyRows))
