@@ -1,17 +1,18 @@
 """
-StarterCpp Conan 2.0 Configuration
+RadioWizard Conan 2.0 Configuration
 
-This file defines all external dependencies managed by Conan package manager.
+Manages external dependencies for the RadioWizard SDR application —
+SDR control, spectrum/IQ observation, signal isolation, and demodulation.
 """
 
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMakeDeps, cmake_layout
 
 
-class StarterCppConan(ConanFile):
-   name = "startercpp"
+class RadioWizardConan(ConanFile):
+   name = "radiowizard"
    version = "1.0.0"
-   description = "A robust C++ starter project template"
+   description = "SDR control, spectrum/IQ observation, signal isolation and demodulation"
 
    # Build settings
    settings = "os", "compiler", "build_type", "arch"

@@ -1,10 +1,10 @@
 # Project Design
 
-This document describes the architecture and design decisions of the StarterCpp project.
+This document describes the architecture and design decisions of the RadioWizard project.
 
 ## Overview
 
-StarterCpp is designed as a production-ready C++ project template that demonstrates modern C++ best practices, build system configuration, and software engineering patterns.
+RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spectrum and I/Q data observation, signal isolation, and signal demodulation. It interfaces with SDR hardware to capture RF data, visualizes signals in real time, and provides a distributed processing architecture for streaming high-bandwidth I/Q samples between components.
 
 ## Architecture
 
@@ -18,12 +18,12 @@ StarterCpp is designed as a production-ready C++ project template that demonstra
 │  │ (Zyre P2P)      │  │ (Zyre P2P)      │  │ (UDP Multicast)             │       │
 │  └────────┬────────┘  └────────┬────────┘  └──────────────┬──────────────┘       │
 │           │                    │                          │                       │
-│  ┌─────────────────────────────────────┐                                      │
-│  │ RealTimeGraphsTest (Qt 6)            │                                      │
-│  └───────────────┬─────────────────────┘                                      │
-│                      │                                                           │
-├──────────────────────┼───────────────────────────────────────────────────────────┤
-│                      │         Libraries                                         │
+│  ┌─────────────────────────────────────┐  ┌────────────────────────────────┐      │
+│  │ RealTimeGraphsTest (Qt 6)            │  │ Vita49 File / Perf / RoundTrip│      │
+│  └───────────────┬─────────────────────┘  └──────────────┬─────────────────┘      │
+│                      │                                   │                       │
+├──────────────────────┼───────────────────────────────────┼───────────────────────┤
+│                      │         Libraries                 │                       │
 │  ┌───────────────────────────────────────────────────────────────────────────┐   │
 │  │                         PubSub Library                                     │   │
 │  │  ┌───────────────┐  ┌───────────────┐  ┌─────────────────────────────┐    │   │
@@ -35,6 +35,13 @@ StarterCpp is designed as a production-ready C++ project template that demonstra
 │  │              RealTimeGraphs Library (Qt 6)                                  │   │
 │  │  ┌─────────────────┐ ┌───────────────────┐ ┌───────────────────────────┐  │   │
 │  │  │ SpectrumWidget  │ │ WaterfallWidget   │ │ ConstellationWidget       │  │   │
+│  │  └─────────────────┘ └───────────────────┘ └───────────────────────────┘  │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│  ┌───────────────────────────────────────────────────────────────────────────┐   │
+│  │                    Vita49_2 Library                                          │   │
+│  │  ┌─────────────────┐ ┌───────────────────┐ ┌───────────────────────────┐  │   │
+│  │  │  PacketHeader   │ │ SignalDataPacket  │ │ ContextPacket             │  │   │
+│  │  │  Vita49Types    │ │ Vita49Codec       │ │ ByteSwap                  │  │   │
 │  │  └─────────────────┘ └───────────────────┘ └───────────────────────────┘  │   │
 │  └───────────────────────────────────────────────────────────────────────────┘   │
 │  ┌─────────────────┐                    ┌─────────────────┐                      │
@@ -133,12 +140,25 @@ automatically.
 The protocol buffer library compiles `.proto` files from `src/libs/proto/proto-messages/` into C++ classes:
 
 - **sensor_data.proto**: Sensor readings with metadata, location, and batching
-- **commands.proto**: Command/response pattern for RPC
-- **configuration.proto**: Application configuration structures
+- **commands.proto**: Command/response pattern for SDR control RPC
+- **configuration.proto**: Application and SDR configuration structures
 
-### Applications
+#### Vita49_2 Library (`src/libs/Vita49_2/`)
 
-#### ZyrePublisher (`src/apps/ZyrePublisherTest.cpp`)
+The Vita49_2 library implements the VITA 49.2 standard for signal data and context
+packet encoding/decoding, enabling interoperability with other SDR and signal
+processing systems:
+
+- **PacketHeader**: VITA 49 packet header parsing and construction
+- **SignalDataPacket**: Encode and decode signal (I/Q) data packets
+- **ContextPacket**: Encode and decode context packets carrying metadata (frequency, bandwidth, gain, etc.)
+- **Vita49Codec**: High-level codec for reading/writing VITA 49 packet streams to files
+- **Vita49Types**: Type definitions and constants for the VITA 49.2 standard
+- **ByteSwap**: Endian conversion utilities for network byte order compliance
+
+### Applications (`src/TestApps/`)
+
+#### ZyrePublisher (`src/TestApps/ZyrePublisherTest.cpp`)
 
 Demonstrates:
 - Zyre peer-to-peer publishing
@@ -146,7 +166,7 @@ Demonstrates:
 - Periodic message publishing
 - GeneralLogger usage
 
-#### ZyreSubscriber (`src/apps/ZyreSubscriberTest.cpp`)
+#### ZyreSubscriber (`src/TestApps/ZyreSubscriberTest.cpp`)
 
 Demonstrates:
 - Zyre peer-to-peer subscription
@@ -154,25 +174,43 @@ Demonstrates:
 - Topic-based message handling
 - Formatted logging with spdlog
 
-#### HighBandwidthPublisher (`src/apps/HighBandwidthPublisherTester.cpp`)
+#### HighBandwidthPublisher (`src/TestApps/HighBandwidthPublisherTester.cpp`)
 
 Demonstrates:
 - High-frequency UDP multicast publishing
 - Large message fragmentation
-- Sensor data streaming
+- I/Q and sensor data streaming
 
-#### HighBandwidthSubscriber (`src/apps/HighBandwidthSubscriberTester.cpp`)
+#### HighBandwidthSubscriber (`src/TestApps/HighBandwidthSubscriberTester.cpp`)
 
 Demonstrates:
 - UDP multicast subscription
 - Fragment reassembly
-- High-throughput message reception
+- High-throughput I/Q data reception
 
-#### RealTimeGraphsTest (`src/apps/RealTimeGraphsTest.cpp`)
+#### RealTimeGraphsTest (`src/TestApps/RealTimeGraphsTest.cpp`)
 
 Demonstrates:
 - Interactive Qt application using the RealTimeGraphs widget library
-- Spectrum, waterfall, and constellation displays
+- Spectrum, waterfall, and constellation displays for SDR data
+
+#### Vita49FileCodec (`src/TestApps/Vita49FileCodec.cpp`)
+
+Demonstrates:
+- Encoding and decoding VITA 49.2 packets to/from files
+- Round-trip validation of signal data and context packets
+
+#### Vita49PerfBenchmark (`src/TestApps/Vita49PerfBenchmark.cpp`)
+
+Demonstrates:
+- Performance benchmarking of VITA 49 packet encode/decode
+- Throughput measurement for real-time processing viability
+
+#### Vita49RoundTripTest (`src/TestApps/Vita49RoundTripTest.cpp`)
+
+Demonstrates:
+- End-to-end round-trip validation of VITA 49 packet construction and parsing
+- Data integrity verification
 
 ## Design Decisions
 
@@ -235,8 +273,12 @@ Coverage is collected using gcov/lcov:
 
 Areas for potential enhancement:
 
-1. **Benchmarking**: Add Google Benchmark for performance testing
-2. **Documentation**: Add Doxygen for API documentation
-3. **Packaging**: Add CPack for installers/packages
-4. **Cross-compilation**: Add toolchain files for embedded targets
-5. **Fuzzing**: Add libFuzzer for fuzz testing
+1. **SDR Hardware Drivers**: Integrate SoapySDR or direct device libraries (RTL-SDR, USRP, HackRF) for hardware control
+2. **Signal Demodulation**: Implement demodulation chains (AM, FM, SSB, PSK, QAM, etc.)
+3. **Signal Isolation**: Automatic signal detection and isolation from wideband captures
+4. **DSP Pipeline**: Build a modular DSP processing pipeline (filters, decimation, channelization)
+5. **Benchmarking**: Add Google Benchmark for DSP performance testing
+6. **Documentation**: Add Doxygen for API documentation
+7. **Packaging**: Add CPack for installers/packages
+8. **Embedded Targets**: Add toolchain files for cross-compilation to SDR platforms
+9. **Fuzzing**: Add libFuzzer for fuzz testing of packet parsers

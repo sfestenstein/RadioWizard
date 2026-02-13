@@ -1,6 +1,6 @@
 # Build Guide
 
-This document provides detailed instructions for building the StarterCpp project on various platforms.
+This document provides detailed instructions for building the RadioWizard project — a C++20 application for Software Defined Radio control, spectrum and I/Q data observation, signal isolation, and signal demodulation.
 
 ## Prerequisites
 

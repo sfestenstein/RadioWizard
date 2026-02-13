@@ -1,12 +1,12 @@
 # =============================================================================
-# StarterCpp - Root CMakeLists.txt
+# RadioWizard - Root CMakeLists.txt
 # =============================================================================
 cmake_minimum_required(VERSION 3.25)
 
 # Project definition
-project(StarterCpp
+project(RadioWizard
    VERSION 1.0.0
-   DESCRIPTION "A robust C++ starter project template"
+   DESCRIPTION "SDR control, spectrum/IQ observation, signal isolation and demodulation"
    LANGUAGES CXX
 )
 
@@ -204,7 +204,7 @@ include(GNUInstallDirs)
 set(INSTALL_TARGETS CommonUtils ProtoLib PubSubLib Vita49_2 RealTimeGraphs)
 
 install(TARGETS ${INSTALL_TARGETS}
-   EXPORT StarterCppTargets
+   EXPORT RadioWizardTargets
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -216,7 +216,7 @@ install(TARGETS ${INSTALL_TARGETS}
 # =============================================================================
 
 message(STATUS "")
-message(STATUS "=== StarterCpp Configuration ===")
+message(STATUS "=== RadioWizard Configuration ===")
 message(STATUS "  Version:          ${PROJECT_VERSION}")
 message(STATUS "  Build type:       ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ Standard:     ${CMAKE_CXX_STANDARD}")

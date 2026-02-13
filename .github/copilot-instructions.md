@@ -1,10 +1,10 @@
-# GitHub Copilot Instructions for StarterCpp
+# GitHub Copilot Instructions for RadioWizard
 
-This document provides context and guidelines for GitHub Copilot when working with the StarterCpp project.
+This document provides context and guidelines for GitHub Copilot when working with the RadioWizard project.
 
 ## Project Overview
 
-StarterCpp is a C++20 starter project template using:
+RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spectrum and I/Q data observation, signal isolation, and signal demodulation. It uses:
 - **Build System**: CMake 3.25+ with presets
 - **Package Manager**: Conan 2.0
 - **Compiler**: GCC 13+ or Clang 15+ (Linux/macOS)
@@ -14,14 +14,17 @@ StarterCpp is a C++20 starter project template using:
 ## Project Structure
 
 ```
-StarterCpp/
+RadioWizard/
 ├── src/
-│   ├── apps/               # Executables
+│   ├── TestApps/            # Test/demo executables
 │   │   ├── ZyrePublisherTest.cpp
 │   │   ├── ZyreSubscriberTest.cpp
 │   │   ├── HighBandwidthPublisherTester.cpp
 │   │   ├── HighBandwidthSubscriberTester.cpp
-│   │   └── RealTimeGraphsTest.cpp      # Qt app
+│   │   ├── RealTimeGraphsTest.cpp      # Qt visualization demo
+│   │   ├── Vita49FileCodec.cpp         # VITA 49 file encode/decode
+│   │   ├── Vita49PerfBenchmark.cpp     # VITA 49 performance benchmark
+│   │   └── Vita49RoundTripTest.cpp     # VITA 49 round-trip validation
 │   └── libs/               # Libraries
 │       ├── CommonUtils/    # Common utility library
 │       │   ├── GeneralLogger.h   # Async spdlog wrapper with macros
@@ -43,11 +46,19 @@ StarterCpp/
 │       │   ├── WaterfallWidget.h     # Waterfall/spectrogram display
 │       │   ├── ConstellationWidget.h # IQ constellation display
 │       │   └── ColorMap.h            # Color map utilities
+│       ├── Vita49_2/       # VITA 49.2 signal data packet library
+│       │   ├── PacketHeader.h        # VITA 49 packet header
+│       │   ├── SignalDataPacket.h    # Signal data packet encode/decode
+│       │   ├── ContextPacket.h       # Context packet encode/decode
+│       │   ├── Vita49Codec.h         # High-level codec for file I/O
+│       │   ├── Vita49Types.h         # VITA 49 type definitions
+│       │   └── ByteSwap.h           # Endian conversion utilities
 │       └── proto/          # Protocol buffer library
 │           └── proto-messages/ # .proto source files
 ├── tests/                  # Unit tests
 │   ├── CommonUtilsTests/   # Tests for CommonUtils library
-│   └── PubSubTests/        # Tests for PubSub library
+│   ├── PubSubTests/        # Tests for PubSub library
+│   └── Vita49_2Tests/      # Tests for VITA 49.2 library
 ├── docs/                   # Documentation
 └── .github/                # CI/CD and this file
 ```
@@ -141,13 +152,20 @@ private:
 3. AUTOMOC is enabled; Qt signals/slots are processed automatically
 4. Re-run CMake configure to pick up new files
 
+### Adding a New Vita49_2 Class
+
+1. Create `src/libs/Vita49_2/NewClass.h`
+2. Create `src/libs/Vita49_2/NewClass.cpp` (auto-discovered via `file(GLOB)`)
+3. Create `tests/Vita49_2Tests/NewClassUt.cpp` (auto-discovered via `file(GLOB)`)
+4. Re-run CMake configure to pick up new files
+
 ### Adding a New Application
 
-1. Create `src/apps/new_app_main.cpp`
-2. Add to `src/apps/CMakeLists.txt`:
+1. Create `src/TestApps/new_app_main.cpp`
+2. Add to `src/TestApps/CMakeLists.txt`:
    ```cmake
    add_executable(new_app new_app_main.cpp)
-   target_link_libraries(new_app PRIVATE StarterCpp::common_utils ...)
+   target_link_libraries(new_app PRIVATE RadioWizard::common_utils ...)
    ```
 
 ## Build Commands
@@ -173,15 +191,20 @@ cmake --build --preset coverage --target CommonUtilsCoverage
 
 - `CommonUtils` - CommonUtils shared library
 - `PubSubLib` - PubSub shared library (Zyre and HighBandwidth messaging)
-- `ProtoLib` - Protobuf library (alias: `StarterCpp::proto`)
+- `ProtoLib` - Protobuf library (alias: `RadioWizard::proto`)
+- `Vita49_2` - VITA 49.2 signal data packet library
+- `RealTimeGraphs` - Qt widget library for spectrum/waterfall/constellation display
 - `ZyrePublisher` - Zyre publisher test application
 - `ZyreSubscriber` - Zyre subscriber test application
 - `HighBandwidthPublisher` - UDP multicast publisher test application
 - `HighBandwidthSubscriber` - UDP multicast subscriber test application
-- `RealTimeGraphs` - Qt widget library
 - `RealTimeGraphsTest` - Qt interactive test application
+- `Vita49FileCodec` - VITA 49 file encode/decode application
+- `Vita49PerfBenchmark` - VITA 49 performance benchmark application
+- `Vita49RoundTripTest` - VITA 49 round-trip validation application
 - `CommonUtilsTests` - CommonUtils unit tests
 - `PubSubTests` - PubSub unit tests
+- `Vita49_2Tests` - VITA 49.2 unit tests
 - `CommonUtilsCoverage` - Coverage report target (when `ENABLE_COVERAGE=ON`)
 - `PubSubCoverage` - Coverage report target (when `ENABLE_COVERAGE=ON`)
 

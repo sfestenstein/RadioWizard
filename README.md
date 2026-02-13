@@ -1,23 +1,19 @@
-# StarterCpp
+# RadioWizard
 
-A robust, production-ready C++20 starter project template with modern build tooling, comprehensive testing, and CI/CD integration.
+A C++20 application for Software Defined Radio (SDR) control, spectrum and I/Q data observation, signal isolation, and signal demodulation. RadioWizard interfaces with SDR hardware to provide real-time spectrum visualization, waterfall displays, constellation diagrams, and signal processing capabilities.
 
 ## Features
 
-- **C++20** standard with modern compiler support
-- **CMake 3.25+** build system with presets
-- **Conan 2.0** package manager for dependencies
-- **Google Test** unit testing framework
-- **Protocol Buffers** for serialization
-- **ZeroMQ** for messaging (cppzmq)
-- **Zyre** for peer-to-peer discovery and messaging
-- **CZMQ** high-level C binding for ZeroMQ
-- **spdlog** for logging
-- **Qt 6** for real-time graph widgets
-- **Code quality tools**: clang-format, clang-tidy
-- **Sanitizers**: AddressSanitizer (ASan), UndefinedBehaviorSanitizer (UBSan)
-- **Code coverage** with gcov/lcov
-- **GitHub Actions** CI/CD pipeline
+- **SDR Control**: Interface with Software Defined Radio hardware for tuning, gain control, and sample acquisition
+- **Spectrum Observation**: Real-time spectrum (frequency-domain) display of RF signals
+- **I/Q Data Handling**: Capture, stream, and analyze raw I/Q samples from SDR devices
+- **Signal Isolation**: Identify and isolate individual signals within a wideband capture
+- **Signal Demodulation**: Demodulate isolated signals using configurable demodulation chains
+- **VITA 49.2 Support**: Encode and decode VITA 49.2 signal data and context packets for interoperability
+- **Real-Time Visualization**: Qt 6 widgets for spectrum, waterfall/spectrogram, and IQ constellation displays
+- **Distributed Architecture**: Publish/subscribe messaging via Zyre (peer-to-peer) and UDP multicast for high-bandwidth data streams
+- **Protocol Buffers** for structured command/control and telemetry serialization
+- **Modern C++20** with CMake 3.25+, Conan 2.0, Google Test, spdlog, sanitizers, and CI/CD
 
 ## Quick Start
 
@@ -36,8 +32,8 @@ A robust, production-ready C++20 starter project template with modern build tool
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourorg/StarterCpp.git
-cd StarterCpp
+git clone https://github.com/sfestenstein/RadioWizard
+cd RadioWizard
 
 # Create a Conan profile (one-time setup)
 conan profile detect --force
@@ -114,13 +110,17 @@ cmake --build --preset coverage --target CommonUtilsCoverage
 ## Project Structure
 
 ```
-StarterCpp/
+RadioWizard/
 ├── src/
-│   ├── apps/                     # Executables
+│   ├── TestApps/                 # Test/demo executables
 │   │   ├── ZyrePublisherTest.cpp
 │   │   ├── ZyreSubscriberTest.cpp
 │   │   ├── HighBandwidthPublisherTester.cpp
-│   │   └── HighBandwidthSubscriberTester.cpp
+│   │   ├── HighBandwidthSubscriberTester.cpp
+│   │   ├── RealTimeGraphsTest.cpp        # Qt visualization demo
+│   │   ├── Vita49FileCodec.cpp           # VITA 49 file encode/decode
+│   │   ├── Vita49PerfBenchmark.cpp       # VITA 49 performance benchmark
+│   │   └── Vita49RoundTripTest.cpp       # VITA 49 round-trip validation
 │   └── libs/                     # Libraries
 │       ├── CommonUtils/          # Common utilities library
 │       │   ├── GeneralLogger.h       # Async logging wrapper (spdlog)
@@ -128,18 +128,24 @@ StarterCpp/
 │       │   ├── SnoozableTimer.h      # Timer with snooze capability
 │       │   ├── CircularBuffer.h      # Lock-free circular buffer
 │       │   └── DataHandler.h         # Data handling utilities
-│       ├── PubSub/               # Publish-Subscribe library
+│       ├── PubSub/               # Publish-Subscribe messaging library
 │       │   ├── ZyreNode.h            # Base Zyre node class
 │       │   ├── ZyrePublisher.h       # Zyre-based publisher
 │       │   ├── ZyreSubscriber.h      # Zyre-based subscriber
 │       │   ├── HighBandwidthPublisher.h   # UDP multicast publisher
 │       │   └── HighBandwidthSubscriber.h  # UDP multicast subscriber
-│       ├── RealTimeGraphs/       # Qt widget library
+│       ├── RealTimeGraphs/       # Qt 6 real-time visualization widgets
 │       │   ├── SpectrumWidget.h      # Real-time spectrum display
 │       │   ├── WaterfallWidget.h     # Waterfall/spectrogram display
 │       │   ├── ConstellationWidget.h # IQ constellation display
 │       │   └── ColorMap.h            # Color map utilities
-│       ├── Vita49_2/             # VITA 49.2 packet library
+│       ├── Vita49_2/             # VITA 49.2 signal data packet library
+│       │   ├── PacketHeader.h        # VITA 49 packet header
+│       │   ├── SignalDataPacket.h    # Signal data packet encode/decode
+│       │   ├── ContextPacket.h       # Context packet encode/decode
+│       │   ├── Vita49Codec.h         # High-level codec for file I/O
+│       │   ├── Vita49Types.h         # VITA 49 type definitions
+│       │   └── ByteSwap.h           # Endian conversion utilities
 │       └── proto/                # Protocol buffer library
 │           └── proto-messages/       # Protocol buffer definitions
 │               ├── sensor_data.proto
@@ -147,7 +153,8 @@ StarterCpp/
 │               └── configuration.proto
 ├── tests/                        # Unit tests
 │   ├── CommonUtilsTests/         # CommonUtils unit tests
-│   └── PubSubTests/              # PubSub unit tests
+│   ├── PubSubTests/              # PubSub unit tests
+│   └── Vita49_2Tests/            # VITA 49.2 unit tests
 ├── docs/                         # Documentation
 ├── .github/                      # GitHub configuration
 │   ├── workflows/                # CI/CD pipelines
@@ -232,4 +239,4 @@ Managed by Conan 2.0:
 
 ## License
 
-This project is provided as a starter template. Add your own license as needed.
+This project is proprietary. See LICENSE file for details.

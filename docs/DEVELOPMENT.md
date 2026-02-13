@@ -1,6 +1,6 @@
 # Development Guide
 
-This document covers the development workflow, coding standards, and contribution guidelines for the StarterCpp project.
+This document covers the development workflow, coding standards, and contribution guidelines for the RadioWizard project — a C++20 application for Software Defined Radio control, spectrum and I/Q data observation, signal isolation, and signal demodulation.
 
 ## Development Environment Setup
 
@@ -226,10 +226,19 @@ int myFunction(int param1, std::string_view param2);
 4. `AUTOMOC` is enabled on this target, so Qt signals/slots are handled automatically
 5. Re-run CMake configure to pick up new files
 
+### Adding a New Vita49_2 Class
+
+1. Create header: `src/libs/Vita49_2/NewClass.h`
+2. Create source: `src/libs/Vita49_2/NewClass.cpp`
+3. Files are auto-discovered via `file(GLOB)` in `src/libs/Vita49_2/CMakeLists.txt`
+4. Create test: `tests/Vita49_2Tests/NewClassUt.cpp`
+5. Tests are auto-discovered via `file(GLOB)` in `tests/Vita49_2Tests/CMakeLists.txt`
+6. Re-run CMake configure to pick up new files
+
 ### Adding a New Application
 
-1. Create source: `src/apps/new_app_main.cpp`
-2. Add to `src/apps/CMakeLists.txt`:
+1. Create source: `src/TestApps/new_app_main.cpp`
+2. Add to `src/TestApps/CMakeLists.txt`:
    ```cmake
    add_executable(new_app
       new_app_main.cpp

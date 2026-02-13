@@ -8,7 +8,7 @@ file(GLOB LIB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB LIB_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 add_library(${LIB_NAME} SHARED ${LIB_SOURCES} ${LIB_HEADERS})
-add_library(StarterCpp::${LIB_NAME} ALIAS ${LIB_NAME})
+add_library(RadioWizard::${LIB_NAME} ALIAS ${LIB_NAME})
 
 # Enable Qt MOC (meta-object compiler) for this target
 set_target_properties(${LIB_NAME} PROPERTIES

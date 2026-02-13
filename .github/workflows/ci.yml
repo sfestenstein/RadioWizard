@@ -1,5 +1,5 @@
 # =============================================================================
-# StarterCpp CI/CD Pipeline
+# RadioWizard CI/CD Pipeline
 # =============================================================================
 # Triggers on push to main branch
 # Builds and tests on Linux (GCC) and macOS (Clang)

@@ -68,7 +68,7 @@ if(ENABLE_COVERAGE)
          COMMAND ${GENHTML_EXECUTABLE}
             ${CMAKE_BINARY_DIR}/${COVERAGE_TARGET}.info
             --output-directory ${CMAKE_BINARY_DIR}/${COVERAGE_TARGET}
-            --title "StarterCpp Coverage Report"
+            --title "RadioWizard Coverage Report"
             --legend
             --demangle-cpp
             ${LCOV_IGNORE_ERRORS}
