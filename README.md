@@ -239,4 +239,4 @@ Managed by Conan 2.0:
 
 ## License
 
-This project is proprietary. See LICENSE file for details.
+TBD
