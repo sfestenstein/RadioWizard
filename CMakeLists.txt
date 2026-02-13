@@ -117,7 +117,10 @@ if(ENABLE_CLANG_TIDY)
    find_program(CLANG_TIDY_PROGRAM clang-tidy)
    if(CLANG_TIDY_PROGRAM)
       message(STATUS "Found clang-tidy: ${CLANG_TIDY_PROGRAM}")
-      set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_PROGRAM}")
+      set(CMAKE_CXX_CLANG_TIDY
+         "${CLANG_TIDY_PROGRAM}"
+         "-header-filter=${CMAKE_SOURCE_DIR}/src/.*"
+      )
    else()
       message(WARNING "clang-tidy requested but not found")
    endif()

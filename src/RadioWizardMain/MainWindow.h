@@ -21,6 +21,6 @@ public:
    ~MainWindow();
 
 private:
-   Ui::MainWindow* ui;
+   Ui::MainWindow* _ui;
 };
 #endif // MAINWINDOW_H

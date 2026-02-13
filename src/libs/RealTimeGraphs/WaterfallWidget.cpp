@@ -74,7 +74,7 @@ WaterfallWidget::WaterfallWidget(QWidget* parent, int historyRows)
          const auto rowCount = static_cast<int>(_rows.size());
          if (rowCount == 0)
          {
-            return QString();
+            return {};
          }
          // frac 0 (top) -> newest = index rowCount-1
          // frac 1 (bottom) -> oldest = index 0
@@ -113,7 +113,7 @@ WaterfallWidget::WaterfallWidget(QWidget* parent, int historyRows)
          const auto rowCount = static_cast<int>(_rows.size());
          if (rowCount == 0)
          {
-            return QString();
+            return {};
          }
          auto toRowIdx = [&](double frac) -> std::size_t
          {
