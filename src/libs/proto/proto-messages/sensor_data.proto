@@ -1,0 +1,87 @@
+/**
+ * @file sensor_data.proto
+ * @brief Protocol buffer definition for sensor data messages
+ *
+ * This proto file defines messages for sensor data that can be
+ * used for IoT applications, monitoring systems, or data collection.
+ */
+
+syntax = "proto3";
+
+package messages;
+
+option cc_enable_arenas = true;
+
+/**
+ * Represents a single sensor reading with metadata
+ */
+message SensorReading
+{
+   // Unique identifier for the sensor
+   string sensor_id = 1;
+
+   // Human-readable sensor name
+   string sensor_name = 2;
+
+   // The measured value
+   double value = 3;
+
+   // Unit of measurement (e.g., "celsius", "percent", "meters")
+   string unit = 4;
+
+   // Unix timestamp in milliseconds when the reading was taken
+   int64 timestamp_ms = 5;
+
+   // Quality indicator (0-100, where 100 is highest quality)
+   int32 quality = 6;
+
+   // Sensor status
+   SensorStatus status = 7;
+
+   // Optional location information
+   Location location = 8;
+
+   // Additional metadata as key-value pairs
+   map<string, string> metadata = 9;
+}
+
+/**
+ * Status of a sensor
+ */
+enum SensorStatus
+{
+   SENSOR_STATUS_UNKNOWN = 0;
+   SENSOR_STATUS_ONLINE = 1;
+   SENSOR_STATUS_OFFLINE = 2;
+   SENSOR_STATUS_ERROR = 3;
+   SENSOR_STATUS_CALIBRATING = 4;
+   SENSOR_STATUS_MAINTENANCE = 5;
+}
+
+/**
+ * Geographic location
+ */
+message Location
+{
+   double latitude = 1;
+   double longitude = 2;
+   double altitude = 3;  // meters above sea level
+}
+
+/**
+ * A batch of sensor readings
+ */
+message SensorDataBatch
+{
+   // Collection of sensor readings
+   repeated SensorReading readings = 1;
+
+   // Batch identifier
+   string batch_id = 2;
+
+   // When this batch was created
+   int64 created_at_ms = 3;
+
+   // Source system identifier
+   string source_system = 4;
+}

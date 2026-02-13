@@ -1,0 +1,155 @@
+# =============================================================================
+# StarterCpp CI/CD Pipeline
+# =============================================================================
+# Triggers on push to main branch
+# Builds and tests on Linux (GCC) and macOS (Clang)
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  # ===========================================================================
+  # Linux Build (Ubuntu with GCC)
+  # ===========================================================================
+  linux-build:
+    name: Linux (GCC)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            python3-pip \
+            lcov \
+            protobuf-compiler
+
+      - name: Install Conan
+        run: |
+          pip3 install conan --break-system-packages
+          conan profile detect --force
+
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: ${{ runner.os }}-conan-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            ${{ runner.os }}-conan-
+
+      - name: Install dependencies with Conan
+        run: |
+          conan install . \
+            --output-folder=build \
+            --build=missing \
+            -s build_type=Release \
+            -s compiler.cppstd=20
+
+      - name: Configure CMake
+        run: cmake --preset ci-linux
+
+      - name: Build
+        run: cmake --build --preset ci-linux
+
+      - name: Run tests
+        run: ctest --preset ci-linux
+
+      - name: Generate coverage report
+        run: |
+          cd build/ci-linux
+          LCOV_IGNORE="--ignore-errors inconsistent,mismatch,unused,negative"
+          lcov --capture --directory . --output-file coverage.info --gcov-tool gcov $LCOV_IGNORE
+          lcov --remove coverage.info '/usr/*' '*/build/*' '*/tests/*' --output-file coverage.info $LCOV_IGNORE
+          lcov --list coverage.info $LCOV_IGNORE
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: build/ci-linux/coverage.info
+          fail_ci_if_error: false
+          verbose: true
+        continue-on-error: true
+
+  # ===========================================================================
+  # macOS Build (Clang)
+  # ===========================================================================
+  macos-build:
+    name: macOS (Clang)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          brew install cmake ninja protobuf
+
+      - name: Install Conan
+        run: |
+          pip3 install conan --break-system-packages
+          conan profile detect --force
+
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: ${{ runner.os }}-conan-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            ${{ runner.os }}-conan-
+
+      - name: Install dependencies with Conan
+        run: |
+          conan install . \
+            --output-folder=build \
+            --build=missing \
+            -s build_type=Release \
+            -s compiler.cppstd=20
+
+      - name: Configure CMake
+        run: cmake --preset ci-linux
+
+      - name: Build
+        run: cmake --build --preset ci-linux
+
+      - name: Run tests
+        run: ctest --preset ci-linux
+
+  # ===========================================================================
+  # Code Quality Checks
+  # ===========================================================================
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check clang-format
+        uses: jidicula/clang-format-action@v4.13.0
+        with:
+          clang-format-version: '17'
+          check-path: 'src'
+          fallback-style: 'file'
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "Checking for TODO/FIXME comments..."
+          grep -rn "TODO\|FIXME" src/ tests/ || echo "No TODO/FIXME found"
+        continue-on-error: true

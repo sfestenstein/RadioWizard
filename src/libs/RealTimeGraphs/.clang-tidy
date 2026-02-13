@@ -1,0 +1,15 @@
+# RealTimeGraphs-specific clang-tidy overrides.
+# Relaxes checks that conflict with Qt idioms (Q_OBJECT macro, MOC-generated
+# code, QPainter draw calls, and QWidget inheritance patterns).
+InheritParentConfig: true
+
+CheckOptions:
+  # Qt Q_OBJECT macro generates code that would violate naming rules
+  - key: readability-identifier-naming.PublicMemberPrefix
+    value: ''
+
+Checks: >
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,

@@ -1,0 +1,191 @@
+/**
+ * @file commands.proto
+ * @brief Protocol buffer definitions for command and response messages
+ *
+ * This proto file defines a command/response pattern suitable for
+ * remote procedure calls, device control, or service orchestration.
+ */
+
+syntax = "proto3";
+
+package messages;
+
+option cc_enable_arenas = true;
+
+/**
+ * A command to be executed by a remote system
+ */
+message Command
+{
+   // Unique identifier for this command
+   string command_id = 1;
+
+   // Type of command to execute
+   CommandType type = 2;
+
+   // Target system or device to execute the command
+   string target = 3;
+
+   // Command parameters
+   oneof parameters
+   {
+      StartParameters start_params = 4;
+      StopParameters stop_params = 5;
+      ConfigureParameters configure_params = 6;
+      QueryParameters query_params = 7;
+   }
+
+   // When this command was issued
+   int64 issued_at_ms = 8;
+
+   // Optional timeout in milliseconds (0 = no timeout)
+   int64 timeout_ms = 9;
+
+   // Priority level (higher = more urgent)
+   int32 priority = 10;
+
+   // User or system that issued the command
+   string issuer = 11;
+}
+
+/**
+ * Types of commands
+ */
+enum CommandType
+{
+   COMMAND_TYPE_UNKNOWN = 0;
+   COMMAND_TYPE_START = 1;
+   COMMAND_TYPE_STOP = 2;
+   COMMAND_TYPE_RESTART = 3;
+   COMMAND_TYPE_CONFIGURE = 4;
+   COMMAND_TYPE_QUERY = 5;
+   COMMAND_TYPE_RESET = 6;
+   COMMAND_TYPE_UPDATE = 7;
+}
+
+/**
+ * Parameters for start command
+ */
+message StartParameters
+{
+   // Mode to start in
+   string mode = 1;
+
+   // Initial configuration values
+   map<string, string> initial_config = 2;
+
+   // Whether to wait for full startup before returning
+   bool wait_for_ready = 3;
+}
+
+/**
+ * Parameters for stop command
+ */
+message StopParameters
+{
+   // Graceful shutdown timeout in ms
+   int64 graceful_timeout_ms = 1;
+
+   // Force stop if graceful fails
+   bool force_if_timeout = 2;
+
+   // Reason for stopping
+   string reason = 3;
+}
+
+/**
+ * Parameters for configure command
+ */
+message ConfigureParameters
+{
+   // Configuration values to set
+   map<string, string> settings = 1;
+
+   // Whether to persist the configuration
+   bool persist = 2;
+
+   // Whether to apply immediately or on next restart
+   bool apply_immediately = 3;
+}
+
+/**
+ * Parameters for query command
+ */
+message QueryParameters
+{
+   // What to query
+   repeated string query_fields = 1;
+
+   // Filter criteria
+   map<string, string> filters = 2;
+
+   // Maximum results to return
+   int32 max_results = 3;
+}
+
+/**
+ * Response to a command
+ */
+message CommandResponse
+{
+   // ID of the command this is responding to
+   string command_id = 1;
+
+   // Whether the command succeeded
+   bool success = 2;
+
+   // Status code
+   ResponseStatus status = 3;
+
+   // Human-readable message
+   string message = 4;
+
+   // Detailed error information if failed
+   ErrorDetails error = 5;
+
+   // Result data if applicable
+   map<string, string> result_data = 6;
+
+   // When the response was generated
+   int64 responded_at_ms = 7;
+
+   // Time taken to execute the command in ms
+   int64 execution_time_ms = 8;
+}
+
+/**
+ * Response status codes
+ */
+enum ResponseStatus
+{
+   RESPONSE_STATUS_UNKNOWN = 0;
+   RESPONSE_STATUS_OK = 1;
+   RESPONSE_STATUS_ACCEPTED = 2;
+   RESPONSE_STATUS_PENDING = 3;
+   RESPONSE_STATUS_FAILED = 4;
+   RESPONSE_STATUS_TIMEOUT = 5;
+   RESPONSE_STATUS_INVALID = 6;
+   RESPONSE_STATUS_UNAUTHORIZED = 7;
+   RESPONSE_STATUS_NOT_FOUND = 8;
+}
+
+/**
+ * Detailed error information
+ */
+message ErrorDetails
+{
+   // Error code
+   int32 error_code = 1;
+
+   // Error category
+   string category = 2;
+
+   // Detailed error message
+   string details = 3;
+
+   // Stack trace or debug info (optional, for development)
+   string debug_info = 4;
+
+   // Suggested remediation steps
+   repeated string suggestions = 5;
+}

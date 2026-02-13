@@ -1,0 +1,126 @@
+{
+   "version": 6,
+   "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 25,
+      "patch": 0
+   },
+   "configurePresets": [
+      {
+         "name": "conan-default",
+         "hidden": true,
+         "binaryDir": "${sourceDir}/build/${presetName}",
+         "generator": "Ninja",
+         "cacheVariables": {
+            "CMAKE_POLICY_DEFAULT_CMP0091": "NEW"
+         }
+      },
+      {
+         "name": "debug-clang-tidy",
+         "displayName": "Debug with Clang-Tidy",
+         "inherits": "conan-default",
+         "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "CMAKE_MAP_IMPORTED_CONFIG_DEBUG": "Release",
+            "BUILD_TESTS": "ON",
+            "ENABLE_SANITIZERS": "ON",
+            "ENABLE_CLANG_TIDY": "ON"
+         }
+      },
+      {
+         "name": "debug",
+         "displayName": "Debug",
+         "inherits": "conan-default",
+         "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "CMAKE_MAP_IMPORTED_CONFIG_DEBUG": "Release",
+            "BUILD_TESTS": "ON",
+            "ENABLE_SANITIZERS": "ON",
+            "ENABLE_CLANG_TIDY": "OFF"
+         }
+      },
+      {
+         "name": "release",
+         "displayName": "Release",
+         "inherits": "conan-default",
+         "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Release",
+            "BUILD_TESTS": "OFF",
+            "ENABLE_SANITIZERS": "OFF"
+         }
+      },
+      {
+         "name": "coverage",
+         "displayName": "Coverage",
+         "inherits": "conan-default",
+         "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "CMAKE_MAP_IMPORTED_CONFIG_DEBUG": "Release",
+            "BUILD_TESTS": "ON",
+            "ENABLE_COVERAGE": "ON",
+            "ENABLE_CLANG_TIDY": "ON"
+         }
+      },
+      {
+         "name": "ci-linux",
+         "displayName": "CI Linux",
+         "inherits": "conan-default",
+         "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "CMAKE_MAP_IMPORTED_CONFIG_DEBUG": "Release",
+            "BUILD_TESTS": "ON",
+            "ENABLE_COVERAGE": "ON",
+            "ENABLE_SANITIZERS": "OFF"
+         }
+      }
+   ],
+   "buildPresets": [
+      {
+         "name": "debug",
+         "configurePreset": "debug"
+      },
+      {
+         "name": "release",
+         "configurePreset": "release"
+      },
+      {
+         "name": "coverage",
+         "configurePreset": "coverage"
+      },
+      {
+         "name": "ci-linux",
+         "configurePreset": "ci-linux"
+      }
+   ],
+   "testPresets": [
+      {
+         "name": "debug",
+         "configurePreset": "debug",
+         "output": {
+            "outputOnFailure": true,
+            "verbosity": "default"
+         }
+      },
+      {
+         "name": "coverage",
+         "configurePreset": "coverage",
+         "output": {
+            "outputOnFailure": true,
+            "verbosity": "default"
+         }
+      },
+      {
+         "name": "ci-linux",
+         "configurePreset": "ci-linux",
+         "output": {
+            "outputOnFailure": true,
+            "verbosity": "default"
+         }
+      }
+   ]
+}
