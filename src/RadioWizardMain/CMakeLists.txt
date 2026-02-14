@@ -6,7 +6,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
@@ -42,13 +42,13 @@ else()
     endif()
 endif()
 
-target_link_libraries(RadioWizardMain PRIVATE Qt${QT_VERSION_MAJOR}::Widgets RealTimeGraphs CommonUtils)
+target_link_libraries(RadioWizardMain PRIVATE Qt${QT_VERSION_MAJOR}::Widgets RealTimeGraphs CommonUtils SdrEngine)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
 if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.RadioWizardMain)
+  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.RadioWizardMain RadioWizard::SdrEngine)
 endif()
 set_target_properties(RadioWizardMain PROPERTIES
     ${BUNDLE_ID_OPTION}

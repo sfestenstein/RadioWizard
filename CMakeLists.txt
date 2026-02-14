@@ -55,7 +55,6 @@ set(GCC_WARNINGS
    -Wconversion
    -Wsign-conversion
    -Wnull-dereference
-   -Wdouble-promotion
    -Wformat=2
    -Wimplicit-fallthrough
 )
@@ -135,6 +134,14 @@ find_package(spdlog REQUIRED)
 find_package(protobuf REQUIRED)
 find_package(cppzmq REQUIRED)
 
+# FFTW3 — Fast Fourier Transform
+find_package(FFTW3 REQUIRED)
+message(STATUS "Found FFTW3")
+
+# liquid-dsp — DSP primitives
+find_package(liquid-dsp REQUIRED)
+message(STATUS "Found liquid-dsp")
+
 # RTL-SDR — system dependency (not available via Conan)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(RTLSDR REQUIRED IMPORTED_TARGET librtlsdr)
@@ -191,6 +198,7 @@ add_subdirectory(src/libs/proto)
 add_subdirectory(src/libs/PubSub)
 add_subdirectory(src/libs/Vita49_2)
 add_subdirectory(src/libs/RealTimeGraphs)
+add_subdirectory(src/libs/SdrEngine)
 
 # Applications
 add_subdirectory(src/TestApps)
@@ -202,6 +210,7 @@ if(BUILD_TESTS)
    add_subdirectory(tests/CommonUtilsTests)
    add_subdirectory(tests/PubSubTests)
    add_subdirectory(tests/Vita49_2Tests)
+   add_subdirectory(tests/SdrEngineTests)
 endif()
 
 # =============================================================================
@@ -210,7 +219,7 @@ endif()
 
 include(GNUInstallDirs)
 
-set(INSTALL_TARGETS CommonUtils ProtoLib PubSubLib Vita49_2 RealTimeGraphs)
+set(INSTALL_TARGETS CommonUtils ProtoLib PubSubLib Vita49_2 RealTimeGraphs SdrEngine)
 
 install(TARGETS ${INSTALL_TARGETS}
    EXPORT RadioWizardTargets

@@ -46,6 +46,12 @@ RadioWizard/
 │       │   ├── WaterfallWidget.h     # Waterfall/spectrogram display
 │       │   ├── ConstellationWidget.h # IQ constellation display
 │       │   └── ColorMap.h            # Color map utilities
+│       ├── SdrEngine/      # SDR device abstraction + DSP pipeline (no Qt dep)
+│       │   ├── ISdrDevice.h          # Abstract SDR device interface
+│       │   ├── RtlSdrDevice.h/.cpp   # RTL-SDR implementation (librtlsdr)
+│       │   ├── FftProcessor.h/.cpp   # FFTW-based FFT with configurable windowing
+│       │   ├── SdrEngine.h/.cpp      # Orchestrator: device + FFT + DataHandler output
+│       │   └── SdrTypes.h            # Common types (IqBuffer, SpectrumData, etc.)
 │       ├── Vita49_2/       # VITA 49.2 signal data packet library
 │       │   ├── PacketHeader.h        # VITA 49 packet header
 │       │   ├── SignalDataPacket.h    # Signal data packet encode/decode
@@ -58,6 +64,7 @@ RadioWizard/
 ├── tests/                  # Unit tests
 │   ├── CommonUtilsTests/   # Tests for CommonUtils library
 │   ├── PubSubTests/        # Tests for PubSub library
+│   ├── SdrEngineTests/     # Tests for SdrEngine library
 │   └── Vita49_2Tests/      # Tests for VITA 49.2 library
 ├── docs/                   # Documentation
 └── .github/                # CI/CD and this file

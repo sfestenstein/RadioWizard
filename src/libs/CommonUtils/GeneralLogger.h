@@ -14,22 +14,31 @@
 
 /**
  * @defgroup LoggingMacros Logging Macros
- * @brief Convenience macros for logging at various levels.
+ * @brief Convenience macros for logging at various levels (exception-safe).
+ *
+ * All logging macros are exception-safe and will never throw. Exceptions during
+ * logging are silently caught and discarded, making them safe to use in exception
+ * handlers and noexcept contexts.
  * @{
  */
 
-/** @brief Log a critical message. */
-#define GPCRIT(...) SPDLOG_LOGGER_CRITICAL(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__);
-/** @brief Log an error message. */
-#define GPERROR(...) SPDLOG_LOGGER_ERROR(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__);
-/** @brief Log a warning message. */
-#define GPWARN(...) SPDLOG_LOGGER_WARN(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__);
-/** @brief Log an informational message. */
-#define GPINFO(...) SPDLOG_LOGGER_INFO(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__);
-/** @brief Log a debug message. */
-#define GPDEBUG(...) SPDLOG_LOGGER_DEBUG(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__);
-/** @brief Log a trace message to the backtrace ring-buffer (dumped on segfault). */
-#define GPTRACE(...) SPDLOG_LOGGER_TRACE(CommonUtils::GeneralLogger::s_traceLogger, __VA_ARGS__);
+/** @brief Log a critical message (exception-safe). */
+#define GPCRIT(...) try { SPDLOG_LOGGER_CRITICAL(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__); } catch (...) { }
+
+/** @brief Log an error message (exception-safe). */
+#define GPERROR(...) try { SPDLOG_LOGGER_ERROR(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__); } catch (...) { }
+
+/** @brief Log a warning message (exception-safe). */
+#define GPWARN(...) try { SPDLOG_LOGGER_WARN(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__); } catch (...) { }
+
+/** @brief Log an informational message (exception-safe). */
+#define GPINFO(...) try { SPDLOG_LOGGER_INFO(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__); } catch (...) { }
+
+/** @brief Log a debug message (exception-safe). */
+#define GPDEBUG(...) try { SPDLOG_LOGGER_DEBUG(CommonUtils::GeneralLogger::s_generalLogger, __VA_ARGS__); } catch (...) { }
+
+/** @brief Log a trace message to the backtrace ring-buffer (exception-safe). */
+#define GPTRACE(...) try { SPDLOG_LOGGER_TRACE(CommonUtils::GeneralLogger::s_traceLogger, __VA_ARGS__); } catch (...) { }
 
 /** @} */ // end of LoggingMacros
 

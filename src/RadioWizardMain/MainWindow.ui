@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>RadioWizard</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -86,18 +86,239 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label">
+           <property name="minimumSize">
+            <size>
+             <width>220</width>
+             <height>0</height>
+            </size>
+           </property>
+           <layout class="QVBoxLayout" name="controlPanelLayout">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="leftMargin">
+             <number>8</number>
+            </property>
+            <property name="topMargin">
+             <number>8</number>
+            </property>
+            <property name="rightMargin">
+             <number>8</number>
+            </property>
+            <property name="bottomMargin">
+             <number>8</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="_startStopButton">
               <property name="text">
-               <string>TextLabel</string>
+               <string>Start</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QComboBox" name="comboBox"/>
+            <item>
+             <widget class="QLabel" name="freqLabel">
+              <property name="text">
+               <string>Center Frequency (MHz)</string>
+              </property>
+             </widget>
             </item>
-            <item row="1" column="1">
+            <item>
+             <widget class="QDoubleSpinBox" name="_centerFreqSpinBox">
+              <property name="decimals">
+               <number>3</number>
+              </property>
+              <property name="minimum">
+               <double>24.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1766.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>100.000000000000000</double>
+              </property>
+              <property name="suffix">
+               <string> MHz</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="sampleRateLabel">
+              <property name="text">
+               <string>Sample Rate</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="_sampleRateCombo">
+              <item>
+               <property name="text">
+                <string>0.25 MS/s</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1.024 MS/s</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1.4 MS/s</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1.8 MS/s</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>2.048 MS/s</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>2.4 MS/s</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>2.8 MS/s</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>3.2 MS/s</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="_autoGainCheckBox">
+              <property name="text">
+               <string>Auto Gain</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="gainLabel">
+              <property name="text">
+               <string>Gain</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSlider" name="_gainSlider">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimum">
+               <number>0</number>
+              </property>
+              <property name="maximum">
+               <number>496</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="_gainValueLabel">
+              <property name="text">
+               <string>Auto</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="fftSizeLabel">
+              <property name="text">
+               <string>FFT Size</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="_fftSizeCombo">
+              <item>
+               <property name="text">
+                <string>512</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1024</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>2048</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>4096</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>8192</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>16384</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>32768</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="windowLabel">
+              <property name="text">
+               <string>Window Function</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="_windowFuncCombo">
+              <item>
+               <property name="text">
+                <string>Blackman-Harris</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Hanning</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Flat-Top</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Rectangular</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
              <spacer name="verticalSpacer">
               <property name="orientation">
                <enum>Qt::Orientation::Vertical</enum>
