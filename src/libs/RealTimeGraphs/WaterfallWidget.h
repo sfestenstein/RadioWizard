@@ -14,7 +14,6 @@
 
 // System headers
 #include <chrono>
-#include <cstdint>
 #include <mutex>
 #include <optional>
 #include <string>

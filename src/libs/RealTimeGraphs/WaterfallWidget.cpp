@@ -232,7 +232,7 @@ std::optional<std::pair<float, float>> WaterfallWidget::getAmplitudeRange() cons
       const auto& row = _rows[i];
       if (!row.empty())
       {
-         const auto [rowMin, rowMax] = std::minmax_element(row.begin(), row.end());
+         const auto [rowMin, rowMax] = std::ranges::minmax_element(row);
          minNorm = std::min(minNorm, *rowMin);
          maxNorm = std::max(maxNorm, *rowMax);
       }
@@ -245,8 +245,8 @@ std::optional<std::pair<float, float>> WaterfallWidget::getAmplitudeRange() cons
 
    // Convert normalized [0, 1] values back to dB.
    // Inverse of: norm = (db - _minDb) / (_maxDb - _minDb)
-   const float minDb = minNorm * (_maxDb - _minDb) + _minDb;
-   const float maxDb = maxNorm * (_maxDb - _minDb) + _minDb;
+   const float minDb = (minNorm * (_maxDb - _minDb)) + _minDb;
+   const float maxDb = (maxNorm * (_maxDb - _minDb)) + _minDb;
 
    return std::make_pair(minDb, maxDb);
 }

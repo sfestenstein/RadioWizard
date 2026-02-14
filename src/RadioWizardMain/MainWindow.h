@@ -3,13 +3,10 @@
 
 // Project headers
 #include "SdrEngine.h"
-#include "SdrTypes.h"
 
 // Third-party headers
 #include <QMainWindow>
 
-// System headers
-#include <memory>
 
 QT_BEGIN_NAMESPACE
 

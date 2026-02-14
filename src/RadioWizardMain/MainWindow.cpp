@@ -72,7 +72,7 @@ MainWindow::MainWindow(QWidget* parent)
    // Set defaults that match the UI initial values.
    _engine.setCenterFrequency(100'000'000);   // 100 MHz
    _engine.setSampleRate(2'400'000);           // 2.4 MS/s
-   _engine.setFftSize(2048);
+   _engine.setFftSize(65536);
 
    // Default combo selections.
    _ui->_sampleRateCombo->setCurrentIndex(5);
