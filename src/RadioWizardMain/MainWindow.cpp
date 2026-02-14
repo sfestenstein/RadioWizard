@@ -26,7 +26,7 @@ namespace
 
 /// Sample rates matching the combo-box order in the .ui file.
 constexpr size_t NUM_SAMPLE_RATES = 8;
-constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES = 
+constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES =
 {
    250'000,
    1'024'000,
@@ -86,10 +86,25 @@ MainWindow::MainWindow(QWidget* parent)
    _ui->_detailedSpectrumWidget->setInputIsDb(true);
    _ui->_detailedSpectrumWidget->setDbRange(-120.0F, 0.0F);
 
-   // Wire UI signals → slots.
+   // Set up the Coloor Theme combo Box
+   for (std::size_t i = 0; i < RealTimeGraphs::ColorMap::paletteCount(); ++i)
+   {
+      auto pal = RealTimeGraphs::ColorMap::paletteAt(i);
+      _ui->_colorThemeCombo->addItem(
+          QString::fromStdString(RealTimeGraphs::ColorMap::paletteName(pal)),
+          static_cast<int>(i));
+   }
+   QObject::connect(_ui->_colorThemeCombo, &QComboBox::currentIndexChanged, this, [this](int idx)
+   {
+      auto pal = RealTimeGraphs::ColorMap::paletteAt(static_cast<std::size_t>(idx));
+      _ui->_spectrurmWidget->setColorMap(pal);
+      _ui->_waterfallWidget->setColorMap(pal);
+    });
+
+    // Wire UI signals → slots.
    connect(_ui->_startStopButton, &QPushButton::toggled,
            this, &MainWindow::onStartStopToggled);
-   connect(_ui->_autoScaleButton, &QPushButton::clicked,
+   connect(_ui->_autoScaleBtn, &QPushButton::clicked,
            this, &MainWindow::onAutoScaleClicked);
    connect(_ui->_centerFreqSpinBox, &QDoubleSpinBox::valueChanged,
            this, &MainWindow::onCenterFreqChanged);
@@ -103,6 +118,8 @@ MainWindow::MainWindow(QWidget* parent)
            this, &MainWindow::onFftSizeChanged);
    connect(_ui->_windowFuncCombo, &QComboBox::currentIndexChanged,
            this, &MainWindow::onWindowFuncChanged);
+   connect(_ui->_maxHoldCheckBox, &QCheckBox::toggled,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setMaxHoldEnabled);
 
    // Tie the Spectrum and Waterfall widgets' color maps together.
    _ui->_spectrurmWidget->setXAxisVisible(false); // Waterfall below shows the shared X axis
@@ -256,7 +273,6 @@ void MainWindow::onWindowFuncChanged(int index)
 // ============================================================================
 // DataHandler wiring
 // ============================================================================
-
 void MainWindow::connectDataHandlers()
 {
    // --- Spectrum data → SpectrumWidget + WaterfallWidget ---
@@ -267,7 +283,7 @@ void MainWindow::connectDataHandlers()
          // We need to marshal updates to the GUI thread.
          QMetaObject::invokeMethod(this, [this, data]()
          {
-            try 
+            try
             {
                _ui->_spectrurmWidget->setFrequencyRange(
                   data->centerFreqHz, data->bandwidthHz);
@@ -281,11 +297,11 @@ void MainWindow::connectDataHandlers()
                   data->centerFreqHz, data->bandwidthHz);
                _ui->_waterfallWidget->addRow(data->magnitudesDb);
             }
-            catch (std::exception &exception) 
+            catch (std::exception &exception)
             {
                GPERROR("Caught Data Handler Exception: {}", exception.what());
             }
-            catch(...) 
+            catch(...)
             {
                GPERROR("Caught unknown Data Handler Exception");
             }
@@ -320,7 +336,6 @@ void MainWindow::disconnectDataHandlers()
 // ============================================================================
 // Helpers
 // ============================================================================
-
 uint32_t MainWindow::sampleRateFromIndex(int index)
 {
    if (index < static_cast<int>(std::ssize(SAMPLE_RATES)))
