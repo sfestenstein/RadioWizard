@@ -25,7 +25,7 @@ namespace
 {
 
 /// Sample rates matching the combo-box order in the .ui file.
-constexpr size_t NUM_SAMPLE_RATES = 9;
+constexpr size_t NUM_SAMPLE_RATES = 8;
 constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES = 
 {
    250'000,
@@ -38,8 +38,8 @@ constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES =
    3'200'000,
 };
 
-constexpr size_t NUM_FFT_SIZES = 7;
-constexpr std::array<int, NUM_FFT_SIZES> FFT_SIZES = {512, 1024, 2048, 4096, 8192, 16384, 32768};
+constexpr size_t NUM_FFT_SIZES = 8;
+constexpr std::array<int, NUM_FFT_SIZES> FFT_SIZES = {2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144};
 
 } // anonymous namespace
 
@@ -56,14 +56,27 @@ MainWindow::MainWindow(QWidget* parent)
    // Inject an RTL-SDR device into the engine.
    _engine.setDevice(std::make_unique<SdrEngine::RtlSdrDevice>());
 
+   // Populate sample rate combo box.
+   for (const auto sampleRate : SAMPLE_RATES)
+   {
+      const auto rateMs = static_cast<double>(sampleRate) / 1.0e6;
+      _ui->_sampleRateCombo->addItem(QString::number(rateMs, 'g', 4) + " MS/s");
+   }
+
+   // Populate FFT size combo box.
+   for (const auto fftSize : FFT_SIZES)
+   {
+      _ui->_fftSizeCombo->addItem(QString::number(fftSize));
+   }
+
    // Set defaults that match the UI initial values.
    _engine.setCenterFrequency(100'000'000);   // 100 MHz
    _engine.setSampleRate(2'400'000);           // 2.4 MS/s
    _engine.setFftSize(2048);
 
    // Default combo selections.
-   _ui->_sampleRateCombo->setCurrentIndex(5);  // 2.4 MS/s
-   _ui->_fftSizeCombo->setCurrentIndex(2);     // 2048
+   _ui->_sampleRateCombo->setCurrentIndex(5);
+   _ui->_fftSizeCombo->setCurrentIndex(5);
 
    // Configure the plot widgets for dB input and frequency display.
    _ui->_spectrurmWidget->setInputIsDb(true);
@@ -76,6 +89,8 @@ MainWindow::MainWindow(QWidget* parent)
    // Wire UI signals → slots.
    connect(_ui->_startStopButton, &QPushButton::toggled,
            this, &MainWindow::onStartStopToggled);
+   connect(_ui->_autoScaleButton, &QPushButton::clicked,
+           this, &MainWindow::onAutoScaleClicked);
    connect(_ui->_centerFreqSpinBox, &QDoubleSpinBox::valueChanged,
            this, &MainWindow::onCenterFreqChanged);
    connect(_ui->_sampleRateCombo, &QComboBox::currentIndexChanged,
@@ -88,6 +103,32 @@ MainWindow::MainWindow(QWidget* parent)
            this, &MainWindow::onFftSizeChanged);
    connect(_ui->_windowFuncCombo, &QComboBox::currentIndexChanged,
            this, &MainWindow::onWindowFuncChanged);
+
+   // Tie the Spectrum and Waterfall widgets' color maps together.
+   _ui->_spectrurmWidget->setXAxisVisible(false); // Waterfall below shows the shared X axis
+
+   // Bidirectional X-axis linking
+   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::xViewChanged, _ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::setXViewRange);
+   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::xViewChanged, _ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::setXViewRange);
+
+   // Bidirectional tracking-cursor linking (vertical line sync)
+   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorXChanged, _ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::setLinkedCursorX);
+   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorLeft, _ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::clearLinkedCursorX);
+   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorXChanged, _ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::setLinkedCursorX);
+   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorLeft, _ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::clearLinkedCursorX);
+
+   // Bidirectional measurement-cursor linking (vertical lines only)
+   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::measCursorsChanged, _ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::setLinkedMeasCursors);
+   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::measCursorsChanged, _ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::setLinkedMeasCursors);
+
 }
 
 MainWindow::~MainWindow()
@@ -125,6 +166,33 @@ void MainWindow::onStartStopToggled(bool checked)
       disconnectDataHandlers();
       _ui->_startStopButton->setText("Start");
    }
+}
+
+void MainWindow::onAutoScaleClicked()
+{
+   // Get the amplitude range from the waterfall widget.
+   const auto range = _ui->_waterfallWidget->getAmplitudeRange();
+   if (!range.has_value())
+   {
+      GPWARN("No data available for auto-scaling");
+      return;
+   }
+
+   auto [minDb, maxDb] = range.value();
+
+   // Add some margin (5 dB on each side).
+   constexpr float MARGIN = 5.0F;
+   minDb -= MARGIN;
+   maxDb += MARGIN;
+
+   GPINFO("Auto-scaling to range: {} dB to {} dB", minDb, maxDb);
+
+   // Apply to both spectrum widgets.
+   _ui->_spectrurmWidget->setDbRange(minDb, maxDb);
+   _ui->_detailedSpectrumWidget->setDbRange(minDb, maxDb);
+
+   // Apply to both waterfall widgets.
+   _ui->_waterfallWidget->setDbRange(minDb, maxDb);
 }
 
 void MainWindow::onCenterFreqChanged(double valueMhz)

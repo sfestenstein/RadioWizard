@@ -30,6 +30,7 @@ public:
 
 private slots:
    void onStartStopToggled(bool checked);
+   void onAutoScaleClicked();
    void onCenterFreqChanged(double valueMhz);
    void onSampleRateChanged(int index);
    void onAutoGainToggled(bool checked);

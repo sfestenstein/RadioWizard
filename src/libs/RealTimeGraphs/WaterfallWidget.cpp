@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <limits>
 
 namespace RealTimeGraphs
 {
@@ -212,6 +213,42 @@ void WaterfallWidget::setColorBarVisible(bool visible)
 {
    _colorBar->setVisible(visible);
    update();
+}
+
+std::optional<std::pair<float, float>> WaterfallWidget::getAmplitudeRange() const
+{
+   const std::lock_guard<std::mutex> lock(_mutex);
+
+   if (_rows.empty())
+   {
+      return std::nullopt;
+   }
+
+   float minNorm = std::numeric_limits<float>::max();
+   float maxNorm = std::numeric_limits<float>::lowest();
+
+   for (std::size_t i = 0; i < _rows.size(); ++i)
+   {
+      const auto& row = _rows[i];
+      if (!row.empty())
+      {
+         const auto [rowMin, rowMax] = std::minmax_element(row.begin(), row.end());
+         minNorm = std::min(minNorm, *rowMin);
+         maxNorm = std::max(maxNorm, *rowMax);
+      }
+   }
+
+   if (minNorm == std::numeric_limits<float>::max())
+   {
+      return std::nullopt;
+   }
+
+   // Convert normalized [0, 1] values back to dB.
+   // Inverse of: norm = (db - _minDb) / (_maxDb - _minDb)
+   const float minDb = minNorm * (_maxDb - _minDb) + _minDb;
+   const float maxDb = maxNorm * (_maxDb - _minDb) + _minDb;
+
+   return std::make_pair(minDb, maxDb);
 }
 
 void WaterfallWidget::setXViewRange(double xStart, double xEnd)

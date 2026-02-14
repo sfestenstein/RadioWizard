@@ -16,7 +16,9 @@
 #include <chrono>
 #include <cstdint>
 #include <mutex>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace RealTimeGraphs
@@ -60,6 +62,11 @@ public:
 
    /// Show or hide the built-in color-bar legend.
    void setColorBarVisible(bool visible);
+
+   /// Get the minimum and maximum amplitude values (in dB) from all rows in history.
+   /// Returns std::nullopt if no data is available.
+   /// @return std::optional containing {minDb, maxDb} if data exists, std::nullopt otherwise.
+   [[nodiscard]] std::optional<std::pair<float, float>> getAmplitudeRange() const;
 
    /// Minimum size hint for layout.
    [[nodiscard]] QSize minimumSizeHint() const override;

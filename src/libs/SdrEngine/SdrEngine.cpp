@@ -3,6 +3,7 @@
 #include "GeneralLogger.h"
 
 // System headers
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstring>
@@ -333,6 +334,35 @@ void SdrEngine::processingLoop()
 
       // Run the FFT.
       auto magnitudesDb = _fft.process(block);
+
+      // Decimate to 2048 bins if needed (picking max of each bin).
+      constexpr std::size_t MAX_PLOT_BINS = 2048;
+      if (magnitudesDb.size() > MAX_PLOT_BINS)
+      {
+         std::vector<float> decimated;
+         decimated.reserve(MAX_PLOT_BINS);
+
+         const std::size_t binSize = magnitudesDb.size() / MAX_PLOT_BINS;
+         const std::size_t remainder = magnitudesDb.size() % MAX_PLOT_BINS;
+
+         std::size_t srcIdx = 0;
+         for (std::size_t i = 0; i < MAX_PLOT_BINS; ++i)
+         {
+            // Distribute remainder across bins to handle non-divisible sizes.
+            const std::size_t currentBinSize = binSize + (i < remainder ? 1 : 0);
+
+            float maxVal = magnitudesDb[srcIdx];
+            for (std::size_t j = 1; j < currentBinSize; ++j)
+            {
+               maxVal = std::max(maxVal, magnitudesDb[srcIdx + j]);
+            }
+
+            decimated.push_back(maxVal);
+            srcIdx += currentBinSize;
+         }
+
+         magnitudesDb = std::move(decimated);
+      }
 
       // Publish spectrum data.
       auto spectrum = std::make_shared<SpectrumData>();

@@ -119,6 +119,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QPushButton" name="_autoScaleButton">
+              <property name="text">
+               <string>Auto Scale</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QLabel" name="freqLabel">
               <property name="text">
                <string>Center Frequency (MHz)</string>
@@ -155,48 +162,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="_sampleRateCombo">
-              <item>
-               <property name="text">
-                <string>0.25 MS/s</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>1.024 MS/s</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>1.4 MS/s</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>1.8 MS/s</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>2.048 MS/s</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>2.4 MS/s</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>2.8 MS/s</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>3.2 MS/s</string>
-               </property>
-              </item>
-             </widget>
+             <widget class="QComboBox" name="_sampleRateCombo"/>
             </item>
             <item>
              <widget class="QCheckBox" name="_autoGainCheckBox">
@@ -249,43 +215,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="_fftSizeCombo">
-              <item>
-               <property name="text">
-                <string>512</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>1024</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>2048</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>4096</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>8192</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>16384</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>32768</string>
-               </property>
-              </item>
-             </widget>
+             <widget class="QComboBox" name="_fftSizeCombo"/>
             </item>
             <item>
              <widget class="QLabel" name="windowLabel">
