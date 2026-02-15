@@ -156,9 +156,10 @@ message(STATUS "Found Qt6: ${Qt6_VERSION_STRING}")
 
 # The Conan-installed Qt is Release-only.  The Qt tool targets (moc, uic,
 # rcc, etc.) only have a plain IMPORTED_LOCATION property (no per-config
-# suffix).  When CMAKE_MAP_IMPORTED_CONFIG_DEBUG is set to "Release", CMake
-# looks for IMPORTED_LOCATION_RELEASE first and fails.  Mapping Debug → ""
-# (empty string) makes CMake fall back to the plain IMPORTED_LOCATION.
+# suffix).  When CMAKE_MAP_IMPORTED_CONFIG_<CONFIG> is set to "Release",
+# CMake looks for IMPORTED_LOCATION_RELEASE first and fails.  Mapping
+# Debug/RelWithDebInfo → "" (empty string) makes CMake fall back to the
+# plain IMPORTED_LOCATION.
 #
 # We iterate all known Qt tool targets rather than maintaining a hand-picked
 # list, so this works on both macOS (macdeployqt) and Linux (androiddeployqt,
@@ -172,6 +173,7 @@ foreach(_qt_tool IN LISTS _qt_tool_names)
    if(TARGET Qt6::${_qt_tool})
       set_target_properties(Qt6::${_qt_tool} PROPERTIES
          MAP_IMPORTED_CONFIG_DEBUG ""
+         MAP_IMPORTED_CONFIG_RELWITHDEBINFO ""
       )
    endif()
 endforeach()

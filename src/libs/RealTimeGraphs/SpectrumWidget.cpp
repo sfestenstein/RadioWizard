@@ -11,6 +11,7 @@
 #include <QResizeEvent>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 
@@ -238,7 +239,19 @@ void SpectrumWidget::paintEvent(QPaintEvent* /*event*/)
    painter.restore();
 
    drawLabels(painter, area);
+   drawFps(painter, area);
    _cursorOverlay.draw(painter, area);
+
+   // Update FPS counter.
+   ++_fpsFrameCount;
+   const auto now = std::chrono::steady_clock::now();
+   const auto elapsed = std::chrono::duration<float>(now - _fpsLastTime).count();
+   if (elapsed >= 1.0F)
+   {
+      _fpsDisplay = static_cast<float>(_fpsFrameCount) / elapsed;
+      _fpsFrameCount = 0;
+      _fpsLastTime = now;
+   }
 }
 
 // ============================================================================
@@ -427,6 +440,20 @@ void SpectrumWidget::drawMaxHold(QPainter& painter, const QRect& area) const
       painter.drawLine(pts[i - 1], pts[i]);
    }
    painter.setRenderHint(QPainter::Antialiasing, false);
+}
+
+void SpectrumWidget::drawFps(QPainter& painter, const QRect& area) const
+{
+   QFont font = painter.font();
+   font.setPointSize(9);
+   painter.setFont(font);
+   painter.setPen(QColor(160, 160, 170));
+
+   const QString fpsText = QString::number(static_cast<int>(_fpsDisplay)) + " FPS";
+   constexpr int PADDING = 4;
+   const QRect fpsRect(area.right() - 60 - PADDING, area.top() + PADDING,
+                       60, 16);
+   painter.drawText(fpsRect, Qt::AlignRight | Qt::AlignVCenter, fpsText);
 }
 
 void SpectrumWidget::drawLabels(QPainter& painter, const QRect& area) const

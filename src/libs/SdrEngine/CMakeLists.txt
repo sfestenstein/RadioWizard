@@ -25,6 +25,6 @@ target_link_libraries(${LIB_NAME}
    PUBLIC
       CommonUtils
    PRIVATE
-      fftw::fftw
+      FFTW3::fftw3f
       PkgConfig::RTLSDR
 )

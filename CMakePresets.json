@@ -53,6 +53,19 @@
          }
       },
       {
+         "name": "relwithdebinfo",
+         "displayName": "Release with Debug Info",
+         "inherits": "conan-default",
+         "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+            "CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO": "Release",
+            "BUILD_TESTS": "ON",
+            "ENABLE_SANITIZERS": "OFF",
+            "ENABLE_CLANG_TIDY": "OFF"
+         }
+      },
+      {
          "name": "coverage",
          "displayName": "Coverage",
          "inherits": "conan-default",
@@ -89,6 +102,10 @@
          "configurePreset": "release"
       },
       {
+         "name": "relwithdebinfo",
+         "configurePreset": "relwithdebinfo"
+      },
+      {
          "name": "coverage",
          "configurePreset": "coverage"
       },
@@ -101,6 +118,14 @@
       {
          "name": "debug",
          "configurePreset": "debug",
+         "output": {
+            "outputOnFailure": true,
+            "verbosity": "default"
+         }
+      },
+      {
+         "name": "relwithdebinfo",
+         "configurePreset": "relwithdebinfo",
          "output": {
             "outputOnFailure": true,
             "verbosity": "default"

@@ -38,7 +38,8 @@ jobs:
             python3-pip \
             lcov \
             protobuf-compiler \
-            librtlsdr-dev
+            librtlsdr-dev \
+            libgl-dev
 
       - name: Install Conan
         run: |

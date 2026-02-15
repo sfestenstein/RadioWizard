@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
    darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText,  QColor(127, 127, 127));
    darkPalette.setColor(QPalette::Disabled, QPalette::Highlight,   QColor(80, 80, 80));
    darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(127, 127, 127));
-
+   QApplication::setFont(QFont("Roboto", 10)); 
    QApplication::setPalette(darkPalette);
 
    MainWindow w;

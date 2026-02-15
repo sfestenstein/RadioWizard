@@ -22,50 +22,50 @@ namespace SdrEngine
 namespace
 {
 
-void fillRectangular(std::vector<double>& w, size_t n)
+void fillRectangular(std::vector<float>& w, size_t n)
 {
-   w.assign(static_cast<std::size_t>(n), 1.0);
+   w.assign(static_cast<std::size_t>(n), 1.0F);
 }
 
-void fillHanning(std::vector<double>& w, size_t n)
+void fillHanning(std::vector<float>& w, size_t n)
 {
    w.resize(static_cast<std::size_t>(n));
    for (size_t i = 0; i < n; ++i)
    {
-      const double temp = static_cast<double>(i) / static_cast<double>(n - 1);
-      w[i] = 0.5 * (1.0 - std::cos(2.0 * std::numbers::pi * temp));
+      const float temp = static_cast<float>(i) / static_cast<float>(n - 1);
+      w[i] = 0.5F * (1.0F - std::cos(2.0F * std::numbers::pi_v<float> * temp));
    }
 }
 
-void fillBlackmanHarris(std::vector<double>& w, size_t n)
+void fillBlackmanHarris(std::vector<float>& w, size_t n)
 {
    w.resize(static_cast<std::size_t>(n));
-   constexpr double A0 = 0.35875;
-   constexpr double A1 = 0.48829;
-   constexpr double A2 = 0.14128;
-   constexpr double A3 = 0.01168;
+   constexpr float A0 = 0.35875F;
+   constexpr float A1 = 0.48829F;
+   constexpr float A2 = 0.14128F;
+   constexpr float A3 = 0.01168F;
    for (size_t i = 0; i < n; ++i)
    {
-      const double temp = static_cast<double>(i) / static_cast<double>(n - 1);
-      const double x = 2.0 * std::numbers::pi * temp;
-      w[i] = A0 - (A1 * std::cos(x)) + (A2 * std::cos(2.0 * x)) - (A3 * std::cos(3.0 * x));
+      const float temp = static_cast<float>(i) / static_cast<float>(n - 1);
+      const float x = 2.0F * std::numbers::pi_v<float> * temp;
+      w[i] = A0 - (A1 * std::cos(x)) + (A2 * std::cos(2.0F * x)) - (A3 * std::cos(3.0F * x));
    }
 }
 
-void fillFlatTop(std::vector<double>& w, size_t n)
+void fillFlatTop(std::vector<float>& w, size_t n)
 {
    w.resize(static_cast<std::size_t>(n));
-   constexpr double A0 = 0.21557895;
-   constexpr double A1 = 0.41663158;
-   constexpr double A2 = 0.277263158;
-   constexpr double A3 = 0.083578947;
-   constexpr double A4 = 0.006947368;
+   constexpr float A0 = 0.21557895F;
+   constexpr float A1 = 0.41663158F;
+   constexpr float A2 = 0.277263158F;
+   constexpr float A3 = 0.083578947F;
+   constexpr float A4 = 0.006947368F;
    for (size_t i = 0; i < n; ++i)
    {
-      const double temp = static_cast<double>(i) / static_cast<double>(n - 1);
-      const double x = 2.0 * std::numbers::pi * temp;
-      w[i] = A0 - (A1 * std::cos(x)) + (A2 * std::cos(2.0 * x))
-                - (A3 * std::cos(3.0 * x)) + (A4 * std::cos(4.0 * x));
+      const float temp = static_cast<float>(i) / static_cast<float>(n - 1);
+      const float x = 2.0F * std::numbers::pi_v<float> * temp;
+      w[i] = A0 - (A1 * std::cos(x)) + (A2 * std::cos(2.0F * x))
+                - (A3 * std::cos(3.0F * x)) + (A4 * std::cos(4.0F * x));
    }
 }
 
@@ -170,40 +170,40 @@ std::vector<float> FftProcessor::process(
    const std::size_t copyLen = std::min(samples.size(), n);
    for (std::size_t i = 0; i < copyLen; ++i)
    {
-      _in[2 * i]     = static_cast<double>(samples[i].real()) * _window[i];
-      _in[(2 * i) + 1] = static_cast<double>(samples[i].imag()) * _window[i];
+      _in[2 * i]     = samples[i].real() * _window[i];
+      _in[(2 * i) + 1] = samples[i].imag() * _window[i];
    }
    // Zero-pad if necessary.
    for (std::size_t i = copyLen; i < n; ++i)
    {
-      _in[2 * i]     = 0.0;
-      _in[(2 * i) + 1] = 0.0;
+      _in[2 * i]     = 0.0F;
+      _in[(2 * i) + 1] = 0.0F;
    }
 
    // Execute the FFT.
-   fftw_execute(_plan);
+   fftwf_execute(_plan);
 
    // Convert complex output → magnitude in dB, with DC-centring (fftshift).
    std::vector<float> magnitudesDb(n);
    const auto half = n / 2;
 
    // Normalisation factor — window coherent gain.
-   double windowSum = 0.0;
+   float windowSum = 0.0F;
    for (std::size_t i = 0; i < n; ++i)
    {
       windowSum += _window[i];
    }
-   const double normFactor = (windowSum > 0.0) ? windowSum : 1.0;
+   const float normFactor = (windowSum > 0.0F) ? windowSum : 1.0F;
 
    for (std::size_t i = 0; i < n; ++i)
    {
-      const double re  = _out[2 * i];
-      const double im  = _out[(2 * i) + 1];
-      const double mag = std::sqrt((re * re) + (im * im)) / normFactor;
+      const float re  = _out[2 * i];
+      const float im  = _out[(2 * i) + 1];
+      const float mag = std::sqrt((re * re) + (im * im)) / normFactor;
 
       // Guard against log10(0).
-      constexpr double FLOOR = 1.0e-20;
-      const auto dB = static_cast<float>(20.0 * std::log10(std::max(mag, FLOOR)));
+      constexpr float FLOOR = 1.0e-20F;
+      const float dB = 20.0F * std::log10(std::max(mag, FLOOR));
 
       // fftshift: swap lower and upper halves.
       const std::size_t dst = (i + half) % n;
@@ -223,9 +223,9 @@ void FftProcessor::rebuild()
 
    const auto n = static_cast<std::size_t>(_fftSize);
 
-   // Allocate FFTW-aligned buffers (interleaved complex = 2× doubles).
-   _in  = fftw_alloc_real(2 * n);
-   _out = fftw_alloc_real(2 * n);
+   // Allocate FFTW-aligned buffers (interleaved complex = 2× floats).
+   _in  = fftwf_alloc_real(2 * n);
+   _out = fftwf_alloc_real(2 * n);
 
    if (_in == nullptr || _out == nullptr)
    {
@@ -234,10 +234,10 @@ void FftProcessor::rebuild()
    }
 
    // Create a complex-to-complex plan (DFT_1D, forward).
-   _plan = fftw_plan_dft_1d(
+   _plan = fftwf_plan_dft_1d(
       static_cast<int>(_fftSize),
-      reinterpret_cast<fftw_complex*>(_in),
-      reinterpret_cast<fftw_complex*>(_out),
+      reinterpret_cast<fftwf_complex*>(_in),
+      reinterpret_cast<fftwf_complex*>(_out),
       FFTW_FORWARD, FFTW_MEASURE);
 
    buildWindow();
@@ -249,17 +249,17 @@ void FftProcessor::destroy()
 {
    if (_plan != nullptr)
    {
-      fftw_destroy_plan(_plan);
+      fftwf_destroy_plan(_plan);
       _plan = nullptr;
    }
    if (_in != nullptr)
    {
-      fftw_free(_in);
+      fftwf_free(_in);
       _in = nullptr;
    }
    if (_out != nullptr)
    {
-      fftw_free(_out);
+      fftwf_free(_out);
       _out = nullptr;
    }
 }

@@ -334,9 +334,10 @@ void SdrEngine::processingLoop()
 {
    GPINFO("Processing thread started");
 
+   std::vector<std::complex<float>> block;
+
    while (_running)
    {
-      std::vector<std::complex<float>> block;
 
       {
          std::unique_lock<std::mutex> lock(_bufMutex);
@@ -442,6 +443,7 @@ void SdrEngine::processingLoop()
       spectrum->bandwidthHz   = static_cast<double>(_sampleRateHz.load());
       spectrum->fftSize       = _fft.getFftSize();
       _spectrumHandler->signalData(spectrum);
+      block.clear();
    }
 
    GPINFO("Processing thread exiting");

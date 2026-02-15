@@ -11,7 +11,7 @@
 #include <vector>
 
 // Forward declaration — avoids exposing fftw3.h in the header.
-struct fftw_plan_s;
+struct fftwf_plan_s;
 
 namespace SdrEngine
 {
@@ -80,11 +80,11 @@ private:
    WindowFunction _windowFunc;
 
    // FFTW resources — opaque so we don't expose fftw3.h.
-   double* _in{nullptr};       ///< FFTW input  (real interleaved as pairs).
-   double* _out{nullptr};      ///< FFTW output (complex interleaved).
-   fftw_plan_s* _plan{nullptr};
+   float* _in{nullptr};        ///< FFTW input  (real interleaved as pairs).
+   float* _out{nullptr};       ///< FFTW output (complex interleaved).
+   fftwf_plan_s* _plan{nullptr};
 
-   std::vector<double> _window; ///< Pre-computed window coefficients.
+   std::vector<float> _window;  ///< Pre-computed window coefficients.
 };
 
 } // namespace SdrEngine

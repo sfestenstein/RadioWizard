@@ -6,6 +6,7 @@
 #include "ColorMap.h"
 
 // System headers
+#include <chrono>
 #include <cstdint>
 #include <mutex>
 #include <vector>
@@ -84,6 +85,7 @@ private:
    void drawSpectrum(QPainter& painter, const QRect& area) const;
    void drawMaxHold(QPainter& painter, const QRect& area) const;
    void drawLabels(QPainter& painter, const QRect& area) const;
+   void drawFps(QPainter& painter, const QRect& area) const;
 
    /// Convert a linear magnitude to normalised [0, 1] within the current view range.
    [[nodiscard]] float toNormalised(float value) const;
@@ -127,6 +129,11 @@ private:
    static constexpr int TICK_LENGTH   = 5;
 
    bool _xAxisVisible{true};
+
+   // FPS counter
+   std::chrono::steady_clock::time_point _fpsLastTime{std::chrono::steady_clock::now()};
+   int _fpsFrameCount{0};
+   float _fpsDisplay{0.0F};
 };
 
 } // namespace RealTimeGraphs
