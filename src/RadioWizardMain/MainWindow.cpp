@@ -70,8 +70,8 @@ MainWindow::MainWindow(QWidget* parent)
    }
 
    // Set defaults that match the UI initial values.
-   _engine.setCenterFrequency(100'000'000);   // 100 MHz
-   _engine.setSampleRate(2'400'000);           // 2.4 MS/s
+   _engine.setCenterFrequency(92'100'000);
+   _engine.setSampleRate(2'400'000);
    _engine.setFftSize(65536);
 
    // Default combo selections.
@@ -131,6 +131,7 @@ MainWindow::MainWindow(QWidget* parent)
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setMaxHoldEnabled);
    connect(_ui->_bwCursorButton, &QPushButton::toggled,
            this, &MainWindow::onBwCursorToggled);
+   onFftAverageChanged(33); 
 
    // Bandwidth cursor synchronisation between Spectrum and Waterfall
    QObject::connect(_ui->_spectrurmWidget,
@@ -311,7 +312,7 @@ void MainWindow::onWindowFuncChanged(int index)
 void MainWindow::onFftAverageChanged(int value)
 {
    // Map slider value [0, 100] to alpha [0.0, 1.0]
-   const float alpha = static_cast<float>(value) / 100.0F;
+   const auto alpha = static_cast<float>(value) / 100.0F;
    _engine.setFftAverageAlpha(alpha);
 
    // Update the label to show current value
