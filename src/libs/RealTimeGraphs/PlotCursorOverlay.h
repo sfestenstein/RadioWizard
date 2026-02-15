@@ -102,6 +102,42 @@ public:
    /// Set or clear linked measurement-cursor vertical lines from another widget.
    void setLinkedMeasCursors(std::optional<double> x1, std::optional<double> x2);
 
+   // ----- Bandwidth cursor -----
+
+   /// Enable or disable bandwidth cursor overlay.
+   void setBandwidthCursorEnabled(bool enabled);
+
+   /// Whether the bandwidth cursor is currently enabled.
+   [[nodiscard]] bool isBandwidthCursorEnabled() const { return _bwCursorEnabled; }
+
+   /// Set the half-width of the bandwidth cursor as a fraction of the full data range.
+   void setBandwidthCursorHalfWidth(double dataFrac);
+
+   /// Get the current bandwidth cursor half-width fraction.
+   [[nodiscard]] double bandwidthCursorHalfWidth() const { return _bwCursorHalfWidthFrac; }
+
+   /// Lock the bandwidth cursor at the current tracking position.
+   /// Returns true if successfully locked.
+   bool lockBandwidthCursor(const QPoint& pos, const QRect& plotArea);
+
+   /// Lock the bandwidth cursor at a specific data-space X value.
+   void lockBandwidthCursorAt(double xData);
+
+   /// Unlock the bandwidth cursor so it follows the mouse again.
+   void unlockBandwidthCursor();
+
+   /// Whether the bandwidth cursor is locked in place.
+   [[nodiscard]] bool isBandwidthCursorLocked() const { return _bwCursorLocked; }
+
+   /// Get the locked bandwidth cursor X data value.
+   [[nodiscard]] double lockedBandwidthCursorX() const { return _bwCursorLockedX; }
+
+   /// Set or clear a linked bandwidth cursor lock from another widget.
+   void setLinkedBandwidthLock(double xData, double halfWidthFrac);
+
+   /// Clear the linked bandwidth cursor lock.
+   void clearLinkedBandwidthLock();
+
    // ----- Drawing (call from paintEvent after other content) -----
 
    /// Draw the tracking crosshair, measurement cursors, and delta readout.
@@ -112,6 +148,7 @@ private:
    void drawMeasurementCursors(QPainter& painter, const QRect& area) const;
    void drawDeltaReadout(QPainter& painter, const QRect& area) const;
    void drawLinkedCursors(QPainter& painter, const QRect& area) const;
+   void drawBandwidthCursor(QPainter& painter, const QRect& area) const;
 
    // Coordinate callbacks
    PixelToDataFn _pixelToData;
@@ -138,6 +175,17 @@ private:
    std::optional<double> _linkedTrackingX;
    std::optional<double> _linkedMeas1X;
    std::optional<double> _linkedMeas2X;
+
+   // Bandwidth cursor state
+   bool _bwCursorEnabled{false};
+   double _bwCursorHalfWidthFrac{0.0};
+   bool _bwCursorLocked{false};
+   double _bwCursorLockedX{0.0};
+
+   // Linked bandwidth cursor lock from another widget
+   bool _linkedBwLockActive{false};
+   double _linkedBwLockX{0.0};
+   double _linkedBwLockHalfWidth{0.0};
 };
 
 } // namespace RealTimeGraphs

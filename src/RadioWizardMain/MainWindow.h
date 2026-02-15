@@ -36,6 +36,7 @@ private slots:
    void onWindowFuncChanged(int index);
    void onFftAverageChanged(int value);
    void onDcSpikeRemovalToggled(bool checked);
+   void onBwCursorToggled(bool checked);
 
 private:
    /// Register DataHandler listeners for spectrum and I/Q data.

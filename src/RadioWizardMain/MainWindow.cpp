@@ -129,6 +129,34 @@ MainWindow::MainWindow(QWidget* parent)
            this, &MainWindow::onDcSpikeRemovalToggled);
    connect(_ui->_maxHoldCheckBox, &QCheckBox::toggled,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setMaxHoldEnabled);
+   connect(_ui->_bwCursorButton, &QPushButton::toggled,
+           this, &MainWindow::onBwCursorToggled);
+
+   // Bandwidth cursor synchronisation between Spectrum and Waterfall
+   QObject::connect(_ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorHalfWidthChanged,
+                    _ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::setBandwidthCursorHalfWidthHz);
+   QObject::connect(_ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorHalfWidthChanged,
+                    _ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::setBandwidthCursorHalfWidthHz);
+   QObject::connect(_ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorLocked,
+                    _ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::lockBandwidthCursorAt);
+   QObject::connect(_ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorLocked,
+                    _ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::lockBandwidthCursorAt);
+   QObject::connect(_ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorUnlocked,
+                    _ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::unlockBandwidthCursor);
+   QObject::connect(_ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorUnlocked,
+                    _ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::unlockBandwidthCursor);
 
    // Tie the Spectrum and Waterfall widgets' color maps together.
    _ui->_spectrurmWidget->setXAxisVisible(false); // Waterfall below shows the shared X axis
@@ -293,6 +321,12 @@ void MainWindow::onFftAverageChanged(int value)
 void MainWindow::onDcSpikeRemovalToggled(bool checked)
 {
    _engine.setDcSpikeRemovalEnabled(checked);
+}
+
+void MainWindow::onBwCursorToggled(bool checked)
+{
+   _ui->_spectrurmWidget->setBandwidthCursorEnabled(checked);
+   _ui->_waterfallWidget->setBandwidthCursorEnabled(checked);
 }
 
 // ============================================================================

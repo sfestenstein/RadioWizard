@@ -86,6 +86,7 @@ bool PlotCursorOverlay::clearCursors()
 
 void PlotCursorOverlay::draw(QPainter& painter, const QRect& plotArea) const
 {
+   drawBandwidthCursor(painter, plotArea);
    drawLinkedCursors(painter, plotArea);
    drawTrackingCrosshair(painter, plotArea);
    drawMeasurementCursors(painter, plotArea);
@@ -320,6 +321,133 @@ void PlotCursorOverlay::drawLinkedCursors(QPainter& painter,
    if (_linkedMeas2X.has_value())
    {
       drawVerticalLine(*_linkedMeas2X, QColor(140, 30, 30), Qt::SolidLine);
+   }
+}
+
+// ============================================================================
+// Bandwidth cursor
+// ============================================================================
+
+void PlotCursorOverlay::setBandwidthCursorEnabled(bool enabled)
+{
+   _bwCursorEnabled = enabled;
+   if (!enabled)
+   {
+      _bwCursorLocked = false;
+      _linkedBwLockActive = false;
+   }
+}
+
+void PlotCursorOverlay::setBandwidthCursorHalfWidth(double dataFrac)
+{
+   _bwCursorHalfWidthFrac = dataFrac;
+}
+
+bool PlotCursorOverlay::lockBandwidthCursor(const QPoint& pos,
+                                             const QRect& plotArea)
+{
+   if (!_bwCursorEnabled || !plotArea.contains(pos) || !_pixelToData)
+   {
+      return false;
+   }
+   const auto data = _pixelToData(pos, plotArea);
+   _bwCursorLocked  = true;
+   _bwCursorLockedX = data.x;
+   return true;
+}
+
+void PlotCursorOverlay::lockBandwidthCursorAt(double xData)
+{
+   _bwCursorLocked  = true;
+   _bwCursorLockedX = xData;
+}
+
+void PlotCursorOverlay::unlockBandwidthCursor()
+{
+   _bwCursorLocked = false;
+}
+
+void PlotCursorOverlay::setLinkedBandwidthLock(double xData,
+                                                double halfWidthFrac)
+{
+   _linkedBwLockActive    = true;
+   _linkedBwLockX         = xData;
+   _linkedBwLockHalfWidth = halfWidthFrac;
+}
+
+void PlotCursorOverlay::clearLinkedBandwidthLock()
+{
+   _linkedBwLockActive = false;
+}
+
+void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
+                                             const QRect& area) const
+{
+   if (!_bwCursorEnabled || !_dataToPixel)
+   {
+      return;
+   }
+
+   // Determine the X data centre and half-width for the band.
+   double centerX     = 0.0;
+   double halfWidth   = _bwCursorHalfWidthFrac;
+   bool   shouldDraw  = false;
+
+   if (_bwCursorLocked)
+   {
+      centerX    = _bwCursorLockedX;
+      shouldDraw = true;
+   }
+   else if (_cursorInPlot && _pixelToData)
+   {
+      const auto data = _pixelToData(_cursorPos, area);
+      centerX    = data.x;
+      shouldDraw = true;
+   }
+   else if (_linkedTrackingX.has_value())
+   {
+      centerX    = *_linkedTrackingX;
+      shouldDraw = true;
+   }
+
+   // Also draw linked bandwidth lock from peer widget
+   if (_linkedBwLockActive)
+   {
+      centerX    = _linkedBwLockX;
+      halfWidth  = _linkedBwLockHalfWidth;
+      shouldDraw = true;
+   }
+
+   if (!shouldDraw)
+   {
+      return;
+   }
+
+   // Convert data-space boundaries to pixel positions.
+   const DataPoint leftPt{centerX - halfWidth, 0.0};
+   const DataPoint rightPt{centerX + halfWidth, 0.0};
+   const QPoint leftPx  = _dataToPixel(leftPt, area);
+   const QPoint rightPx = _dataToPixel(rightPt, area);
+
+   const int x1 = std::clamp(leftPx.x(), area.left(), area.right());
+   const int x2 = std::clamp(rightPx.x(), area.left(), area.right());
+
+   if (x2 > x1)
+   {
+      const QColor bandColor(160, 160, 160, 50);
+      painter.fillRect(QRect(x1, area.top(), x2 - x1, area.height()), bandColor);
+
+      // Draw thin border lines at the edges
+      const QColor edgeColor(180, 180, 180, 120);
+      painter.setPen(QPen(edgeColor, 1, Qt::SolidLine));
+      if (leftPx.x() >= area.left() && leftPx.x() <= area.right())
+      {
+         painter.drawLine(leftPx.x(), area.top(), leftPx.x(), area.bottom());
+      }
+      if (rightPx.x() >= area.left() && rightPx.x() <= area.right())
+      {
+         painter.drawLine(rightPx.x(), area.top(), rightPx.x(), area.bottom());
+      }
    }
 }
 

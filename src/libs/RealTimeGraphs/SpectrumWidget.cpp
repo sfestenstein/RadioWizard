@@ -22,19 +22,13 @@ namespace RealTimeGraphs
 // ============================================================================
 
 SpectrumWidget::SpectrumWidget(QWidget* parent)
-   : QWidget(parent)
+   : PlotWidgetBase(parent)
 {
-   setMinimumSize(SpectrumWidget::minimumSizeHint());
-   setAttribute(Qt::WA_OpaquePaintEvent);
-   setMouseTracking(true);
-
    _colorBar = new ColorBarStrip(this);
    _colorBar->setDbRange(_minDb, _maxDb);
    _colorBar->setColorMap(_colorMap);
 
-   // Configure cursor overlay callbacks
-   _cursorOverlay.setMargins(MARGIN_LEFT, MARGIN_RIGHT, MARGIN_TOP, MARGIN_BOTTOM);
-
+   // Configure cursor overlay callbacks (Y-axis is dB-specific)
    _cursorOverlay.setPixelToData(
       [this](const QPoint& pos, const QRect& area) -> PlotCursorOverlay::DataPoint
       {
@@ -67,20 +61,7 @@ SpectrumWidget::SpectrumWidget(QWidget* parent)
 
    _cursorOverlay.setFormatDeltaX(
       [this](double x1, double x2) -> QString
-      {
-         if (_bandwidthHz > 0.0)
-         {
-            const double startFreq = _centerFreqHz - (_bandwidthHz / 2.0);
-            const double freq1 = startFreq + (x1 * _bandwidthHz);
-            const double freq2 = startFreq + (x2 * _bandwidthHz);
-            const double deltaFreq = freq1 - freq2;
-            const QString sign = (deltaFreq < 0.0) ? "-" : "";
-            return QString::fromUtf8("\u0394f: ") + sign
-                 + QString::fromStdString(formatFrequency(std::abs(deltaFreq)));
-         }
-         const double dx = x1 - x2;
-         return QString::fromUtf8("\u0394x: ") + QString::number(dx, 'f', 4);
-      });
+      { return formatDeltaXValue(x1, x2); });
 
    _cursorOverlay.setFormatDeltaY(
       [](double y1, double y2) -> QString
@@ -173,21 +154,6 @@ void SpectrumWidget::setGridLines(int count)
    update();
 }
 
-void SpectrumWidget::setFrequencyRange(double centerFreqHz, double bandwidthHz)
-{
-   _centerFreqHz = centerFreqHz;
-   _bandwidthHz  = bandwidthHz;
-   _viewXStart   = 0.0;
-   _viewXEnd     = 1.0;
-   emit xViewChanged(_viewXStart, _viewXEnd);
-   update();
-}
-
-QSize SpectrumWidget::minimumSizeHint() const
-{
-   return {320, 200};
-}
-
 void SpectrumWidget::resetView()
 {
    _viewMinDb  = static_cast<double>(_minDb);
@@ -196,18 +162,6 @@ void SpectrumWidget::resetView()
    _viewXEnd   = 1.0;
    syncColorBar();
    emit xViewChanged(_viewXStart, _viewXEnd);
-   update();
-}
-
-void SpectrumWidget::setXViewRange(double xStart, double xEnd)
-{
-   if (_viewXStart == xStart && _viewXEnd == xEnd)
-   {
-      return;
-   }
-   _viewXStart = xStart;
-   _viewXEnd   = xEnd;
-   syncColorBar();
    update();
 }
 
@@ -428,17 +382,18 @@ void SpectrumWidget::drawMaxHold(QPainter& painter, const QRect& area) const
       return;
    }
 
-   const size_t binCount = holdSnapshot.size();
+   auto binCount = static_cast<int>(holdSnapshot.size());
    double viewWidth = _viewXEnd - _viewXStart;
    if (viewWidth <= 0.0)
    {
       viewWidth = 1.0;
    }
 
-   const size_t firstBin = std::max(0UL,
-      static_cast<size_t>(std::floor(_viewXStart * static_cast<double>(binCount)) - 1));
-   const size_t lastBin = std::min(binCount - 1,
-      static_cast<size_t>(std::ceil(_viewXEnd * static_cast<double>(binCount))));
+   // Use int for firstBin/lastBin to avoid UB when the subtraction goes negative.
+   const int firstBin = std::max(0,
+      static_cast<int>(std::floor(_viewXStart * static_cast<double>(binCount))) - 1);
+   const int lastBin = std::min(binCount - 1,
+      static_cast<int>(std::ceil(_viewXEnd * static_cast<double>(binCount))));
 
    if (firstBin >= lastBin)
    {
@@ -447,9 +402,9 @@ void SpectrumWidget::drawMaxHold(QPainter& painter, const QRect& area) const
 
    // Compute screen positions for max-hold bins
    std::vector<QPointF> pts;
-   pts.reserve(static_cast<std::size_t>(lastBin - firstBin + 1));
+   pts.reserve(static_cast<std::size_t>(lastBin - firstBin) + 1);
 
-   for (size_t i = firstBin; i <= lastBin; ++i)
+   for (int i = firstBin; i <= lastBin; ++i)
    {
       auto si = static_cast<std::size_t>(i);
       const float norm = toNormalised(holdSnapshot[si]);
@@ -550,9 +505,6 @@ void SpectrumWidget::wheelEvent(QWheelEvent* event)
    const QRect area = plotArea();
    const QPointF pos = event->position();
 
-   // Determine which axis region the cursor is in:
-   //   Y-axis margin (left of plot), X-axis margin (below plot), or plot area.
-   //   The color-bar area (right of plot) also counts as Y-axis.
    const bool inPlot   = area.contains(pos.toPoint());
    const bool inYMargin = ((pos.x() < area.left() || pos.x() > area.right()) &&
                             pos.y() >= area.top() && pos.y() <= area.bottom());
@@ -562,6 +514,13 @@ void SpectrumWidget::wheelEvent(QWheelEvent* event)
    if (!inPlot && !inYMargin && !inXMargin)
    {
       QWidget::wheelEvent(event);
+      return;
+   }
+
+   // Bandwidth cursor: wheel adjusts the half-width when in the plot area.
+   if (inPlot && processBandwidthWheel(event->angleDelta().y()))
+   {
+      event->accept();
       return;
    }
 
@@ -605,18 +564,20 @@ void SpectrumWidget::mousePressEvent(QMouseEvent* event)
 {
    if (event->button() == Qt::MiddleButton)
    {
-      if (_cursorOverlay.clearCursors())
-      {
-         emitMeasCursorsChanged();
-         update();
-      }
-      emit requestPeerCursorClear();
+      processMiddleButtonPress();
       event->accept();
       return;
    }
 
    if (event->button() == Qt::LeftButton)
    {
+      // Bandwidth cursor: left-click toggles lock.
+      if (processBandwidthClick(event->pos()))
+      {
+         event->accept();
+         return;
+      }
+
       const QRect area = plotArea();
       const QPoint pos = event->pos();
 
@@ -705,18 +666,7 @@ void SpectrumWidget::mouseMoveEvent(QMouseEvent* event)
    }
    else
    {
-      // Track cursor for crosshair
-      const QRect area = plotArea();
-      if (_cursorOverlay.handleMouseMove(event->pos(), area))
-      {
-         // Emit tracking X in data-space
-         const double xFrac = static_cast<double>(event->pos().x() - area.left())
-                            / static_cast<double>(area.width());
-         const double dataX = _viewXStart +
-                            (std::clamp(xFrac, 0.0, 1.0) * (_viewXEnd - _viewXStart));
-         emit trackingCursorXChanged(dataX);
-         update();
-      }
+      processCursorMove(event->pos());
       QWidget::mouseMoveEvent(event);
    }
 }
@@ -737,29 +687,13 @@ void SpectrumWidget::mouseReleaseEvent(QMouseEvent* event)
 
 void SpectrumWidget::mouseDoubleClickEvent(QMouseEvent* event)
 {
-   const QRect area = plotArea();
+   if (processMeasCursorDoubleClick(event))
+   {
+      event->accept();
+      return;
+   }
 
-   if (event->button() == Qt::LeftButton)
-   {
-      if (_cursorOverlay.placeCursor1(event->pos(), area))
-      {
-         emit requestPeerCursorClear();
-         emitMeasCursorsChanged();
-         update();
-      }
-      event->accept();
-   }
-   else if (event->button() == Qt::RightButton)
-   {
-      if (_cursorOverlay.placeCursor2(event->pos(), area))
-      {
-         emit requestPeerCursorClear();
-         emitMeasCursorsChanged();
-         update();
-      }
-      event->accept();
-   }
-   else if (event->button() == Qt::MiddleButton)
+   if (event->button() == Qt::MiddleButton)
    {
       resetView();
       event->accept();
@@ -772,12 +706,7 @@ void SpectrumWidget::mouseDoubleClickEvent(QMouseEvent* event)
 
 void SpectrumWidget::leaveEvent(QEvent* event)
 {
-   if (_cursorOverlay.handleLeave())
-   {
-      emit trackingCursorLeft();
-      update();
-   }
-   QWidget::leaveEvent(event);
+   processLeaveEvent(event);
 }
 
 // ============================================================================
@@ -791,15 +720,9 @@ void SpectrumWidget::syncColorBar()
    _colorBar->setColorMap(_colorMap);
 }
 
-QString SpectrumWidget::formatXValue(double dataFrac) const
+void SpectrumWidget::onViewRangeChanged()
 {
-   if (_bandwidthHz > 0.0)
-   {
-      const double startFreq = _centerFreqHz - (_bandwidthHz / 2.0);
-      const double freq = startFreq + (dataFrac * _bandwidthHz);
-      return QString::fromStdString(formatFrequency(freq));
-   }
-   return QString::number(dataFrac, 'f', 3);
+   syncColorBar();
 }
 
 float SpectrumWidget::toNormalised(float value) const
@@ -817,55 +740,6 @@ float SpectrumWidget::toNormalised(float value) const
    auto viewMax = static_cast<float>(_viewMaxDb);
    const float norm = (db - viewMin) / (viewMax - viewMin);
    return std::clamp(norm, 0.0F, 1.0F);
-}
-
-void SpectrumWidget::setLinkedCursorX(double xData)
-{
-   _cursorOverlay.setLinkedTrackingX(xData);
-   update();
-}
-
-void SpectrumWidget::clearLinkedCursorX()
-{
-   _cursorOverlay.clearLinkedTrackingX();
-   update();
-}
-
-void SpectrumWidget::setLinkedMeasCursors(double x1Valid, double x1,
-                                          double x2Valid, double x2)
-{
-   std::optional<double> opt1;
-   std::optional<double> opt2;
-   if (x1Valid > 0.5)
-   {
-      opt1 = x1;
-   }
-   if (x2Valid > 0.5)
-   {
-      opt2 = x2;
-   }
-   _cursorOverlay.setLinkedMeasCursors(opt1, opt2);
-   update();
-}
-
-void SpectrumWidget::emitMeasCursorsChanged()
-{
-   const auto& c1 = _cursorOverlay.measCursor1();
-   const auto& c2 = _cursorOverlay.measCursor2();
-   emit measCursorsChanged(
-      c1.has_value() ? 1.0 : 0.0, c1.has_value() ? c1->x : 0.0,
-      c2.has_value() ? 1.0 : 0.0, c2.has_value() ? c2->x : 0.0);
-}
-
-void SpectrumWidget::clearMeasCursors()
-{
-   if (_cursorOverlay.clearCursors())
-   {
-      emitMeasCursorsChanged();
-      update();
-   }
-   _cursorOverlay.setLinkedMeasCursors(std::nullopt, std::nullopt);
-   update();
 }
 
 } // namespace RealTimeGraphs
