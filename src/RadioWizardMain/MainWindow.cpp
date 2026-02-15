@@ -86,7 +86,7 @@ MainWindow::MainWindow(QWidget* parent)
    _ui->_detailedSpectrumWidget->setInputIsDb(true);
    _ui->_detailedSpectrumWidget->setDbRange(-120.0F, 0.0F);
 
-   // Set up the Coloor Theme combo Box
+   // Set up the Color Theme combo Box
    for (std::size_t i = 0; i < RealTimeGraphs::ColorMap::paletteCount(); ++i)
    {
       auto pal = RealTimeGraphs::ColorMap::paletteAt(i);
@@ -99,7 +99,12 @@ MainWindow::MainWindow(QWidget* parent)
       auto pal = RealTimeGraphs::ColorMap::paletteAt(static_cast<std::size_t>(idx));
       _ui->_spectrurmWidget->setColorMap(pal);
       _ui->_waterfallWidget->setColorMap(pal);
+      _ui->_detailedSpectrumWidget->setColorMap(pal);
     });
+   _ui->_colorThemeCombo->setCurrentIndex(2);
+   _ui->_spectrurmWidget->setColorMap(RealTimeGraphs::ColorMap::paletteAt(2));
+   _ui->_waterfallWidget->setColorMap(RealTimeGraphs::ColorMap::paletteAt(2));
+   _ui->_detailedSpectrumWidget->setColorMap(RealTimeGraphs::ColorMap::paletteAt(2));
 
     // Wire UI signals → slots.
    connect(_ui->_startStopButton, &QPushButton::toggled,
@@ -118,6 +123,10 @@ MainWindow::MainWindow(QWidget* parent)
            this, &MainWindow::onFftSizeChanged);
    connect(_ui->_windowFuncCombo, &QComboBox::currentIndexChanged,
            this, &MainWindow::onWindowFuncChanged);
+   connect(_ui->_fftAverageSlider, &QSlider::valueChanged,
+           this, &MainWindow::onFftAverageChanged);
+   connect(_ui->_dcSpikeRemovalCheckBox, &QCheckBox::toggled,
+           this, &MainWindow::onDcSpikeRemovalToggled);
    connect(_ui->_maxHoldCheckBox, &QCheckBox::toggled,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setMaxHoldEnabled);
 
@@ -268,6 +277,21 @@ void MainWindow::onWindowFuncChanged(int index)
    {
       _engine.setWindowFunction(MAP[index]);
    }
+}
+
+void MainWindow::onFftAverageChanged(int value)
+{
+   // Map slider value [0, 100] to alpha [0.0, 1.0]
+   const float alpha = static_cast<float>(value) / 100.0F;
+   _engine.setFftAverageAlpha(alpha);
+
+   // Update the label to show current value
+   _ui->_fftAverageValueLabel->setText(QString::number(alpha, 'f', 2));
+}
+
+void MainWindow::onDcSpikeRemovalToggled(bool checked)
+{
+   _engine.setDcSpikeRemovalEnabled(checked);
 }
 
 // ============================================================================

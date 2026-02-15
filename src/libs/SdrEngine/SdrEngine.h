@@ -98,6 +98,23 @@ public:
    /// @return Current windowing function.
    [[nodiscard]] WindowFunction getWindowFunction() const;
 
+   /// Set the FFT averaging alpha (0.0 = no averaging, 1.0 = full smoothing).
+   /// Alpha is the coefficient for the exponential moving average:
+   ///   avg[n] = alpha * avg[n-1] + (1 - alpha) * new[n]
+   /// @param alpha  Averaging coefficient [0.0, 1.0].
+   void setFftAverageAlpha(float alpha);
+
+   /// @return Current FFT averaging alpha coefficient.
+   [[nodiscard]] float getFftAverageAlpha() const;
+
+   /// Enable or disable DC spike removal (local oscillator leakage suppression).
+   /// When enabled, removes DC offset from IQ samples and interpolates the center FFT bin.
+   /// @param enabled  true to remove DC spike, false to disable.
+   void setDcSpikeRemovalEnabled(bool enabled);
+
+   /// @return true if DC spike removal is enabled.
+   [[nodiscard]] bool isDcSpikeRemovalEnabled() const;
+
    // -- Start / stop --------------------------------------------------------
 
    /// Open the device and begin streaming + processing.
@@ -146,6 +163,14 @@ private:
    // -- Cached tuning info --------------------------------------------------
    std::atomic<uint64_t> _centerFreqHz{100'000'000};   // 100 MHz default
    std::atomic<uint32_t> _sampleRateHz{2'400'000};     // 2.4 MS/s default
+
+   // -- FFT averaging -------------------------------------------------------
+   std::atomic<float> _fftAlpha{0.0F};                 // 0.0 = no averaging
+   std::mutex _avgMutex;
+   std::vector<float> _fftAverage;                     // Running average buffer
+
+   // -- DC spike removal ----------------------------------------------------
+   std::atomic<bool> _dcSpikeRemovalEnabled{true};     // Default: enabled
 };
 
 } // namespace SdrEngine

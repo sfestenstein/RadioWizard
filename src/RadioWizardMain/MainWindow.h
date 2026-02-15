@@ -34,6 +34,8 @@ private slots:
    void onGainSliderChanged(int value);
    void onFftSizeChanged(int index);
    void onWindowFuncChanged(int index);
+   void onFftAverageChanged(int value);
+   void onDcSpikeRemovalToggled(bool checked);
 
 private:
    /// Register DataHandler listeners for spectrum and I/Q data.

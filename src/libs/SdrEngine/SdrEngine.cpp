@@ -157,6 +157,26 @@ WindowFunction SdrEngine::getWindowFunction() const
    return _fft.getWindowFunction();
 }
 
+void SdrEngine::setFftAverageAlpha(float alpha)
+{
+   _fftAlpha = std::clamp(alpha, 0.0F, 1.0F);
+}
+
+float SdrEngine::getFftAverageAlpha() const
+{
+   return _fftAlpha;
+}
+
+void SdrEngine::setDcSpikeRemovalEnabled(bool enabled)
+{
+   _dcSpikeRemovalEnabled = enabled;
+}
+
+bool SdrEngine::isDcSpikeRemovalEnabled() const
+{
+   return _dcSpikeRemovalEnabled;
+}
+
 // ============================================================================
 // Start / stop
 // ============================================================================
@@ -281,6 +301,24 @@ void SdrEngine::onRawIqData(const uint8_t* data, std::size_t length)
       chunk.emplace_back(iVal, qVal);
    }
 
+   // Remove DC offset if enabled (suppresses LO leakage spike).
+   if (_dcSpikeRemovalEnabled && !chunk.empty())
+   {
+      // Calculate mean I and Q.
+      std::complex<float> mean{0.0F, 0.0F};
+      for (const auto& sample : chunk)
+      {
+         mean += sample;
+      }
+      mean /= static_cast<float>(chunk.size());
+
+      // Subtract mean from each sample.
+      for (auto& sample : chunk)
+      {
+         sample -= mean;
+      }
+   }
+
    {
       const std::lock_guard<std::mutex> lock(_bufMutex);
       _accumBuf.insert(_accumBuf.end(), chunk.begin(), chunk.end());
@@ -334,6 +372,39 @@ void SdrEngine::processingLoop()
 
       // Run the FFT.
       auto magnitudesDb = _fft.process(block);
+
+      // Apply FFT averaging (exponential moving average).
+      const float alpha = _fftAlpha.load();
+      if (alpha > 0.0F)
+      {
+         const std::lock_guard<std::mutex> lock(_avgMutex);
+         
+         // Initialize averaging buffer on first run or size change.
+         if (_fftAverage.size() != magnitudesDb.size())
+         {
+            _fftAverage = magnitudesDb;
+         }
+         else
+         {
+            // EMA: avg[n] = alpha * avg[n-1] + (1 - alpha) * new[n]
+            for (std::size_t i = 0; i < magnitudesDb.size(); ++i)
+            {
+               _fftAverage[i] = alpha * _fftAverage[i] + (1.0F - alpha) * magnitudesDb[i];
+            }
+            magnitudesDb = _fftAverage;
+         }
+      }
+
+      // Suppress center bin DC spike if enabled (interpolate from neighbors).
+      if (_dcSpikeRemovalEnabled && magnitudesDb.size() > 2)
+      {
+         const std::size_t centerBin = magnitudesDb.size() / 2;
+         // Interpolate center bin from immediate neighbors.
+         if (centerBin > 0 && centerBin < magnitudesDb.size() - 1)
+         {
+            magnitudesDb[centerBin] = (magnitudesDb[centerBin - 1] + magnitudesDb[centerBin + 1]) / 2.0F;
+         }
+      }
 
       // Decimate to 2048 bins if needed (picking max of each bin).
       constexpr std::size_t MAX_PLOT_BINS = 2048;
