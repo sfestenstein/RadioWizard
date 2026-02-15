@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) // NOLINT
       Vita49_2::Vita49Codec codec(Vita49_2::ByteOrder::BigEndian);
       logHeader();
 
-      for (const size_t sz : {100, 1000, 10000, 50000, 100000, 500000, 1000000})
+      for (const size_t sz : {100UL, 1000UL, 10000UL, 50000UL, 100000UL, 500000UL, 1000000UL})
       {
          auto samples = generateTestSignal(sz);
          auto result  = runBenchmark(codec, samples, STREAM_ID, iterations);
@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) // NOLINT
       Vita49_2::Vita49Codec codec(Vita49_2::ByteOrder::LittleEndian);
       logHeader();
 
-      for (const size_t sz : {100, 1000, 10000, 100000, 1000000})
+      for (const size_t sz : {100UL, 1000UL, 10000UL, 100000UL, 1000000UL})
       {
          auto samples = generateTestSignal(sz);
          auto result  = runBenchmark(codec, samples, STREAM_ID, iterations);

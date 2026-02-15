@@ -39,7 +39,7 @@ constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES =
 };
 
 constexpr size_t NUM_FFT_SIZES = 8;
-constexpr std::array<int, NUM_FFT_SIZES> FFT_SIZES = {2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144};
+constexpr std::array<size_t, NUM_FFT_SIZES> FFT_SIZES = {2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144};
 
 } // anonymous namespace
 
@@ -257,9 +257,10 @@ void MainWindow::onGainSliderChanged(int value)
 
 void MainWindow::onFftSizeChanged(int index)
 {
-   if (index < static_cast<int>(std::ssize(FFT_SIZES)))
+   auto indexSize = static_cast<size_t>(index);
+   if (indexSize < NUM_FFT_SIZES)
    {
-      _engine.setFftSize(FFT_SIZES[index]);
+      _engine.setFftSize(FFT_SIZES[indexSize]);
    }
 }
 
@@ -273,9 +274,9 @@ void MainWindow::onWindowFuncChanged(int index)
       SdrEngine::WindowFunction::FlatTop,
       SdrEngine::WindowFunction::Rectangular,
    };
-   if (index < static_cast<int>(std::ssize(MAP)))
+   if (index < std::ssize(MAP))
    {
-      _engine.setWindowFunction(MAP[index]);
+      _engine.setWindowFunction(MAP[static_cast<size_t>(index)]);
    }
 }
 
@@ -301,25 +302,25 @@ void MainWindow::connectDataHandlers()
 {
    // --- Spectrum data → SpectrumWidget + WaterfallWidget ---
    _spectrumListenerId = _engine.spectrumDataHandler().registerListener(
-      [this](const std::shared_ptr<const SdrEngine::SpectrumData>& data)
+      [this](const std::shared_ptr<const SdrEngine::SpectrumData>& specData)
       {
          // DataHandler invokes listeners on its own thread.
          // We need to marshal updates to the GUI thread.
-         QMetaObject::invokeMethod(this, [this, data]()
+         QMetaObject::invokeMethod(this, [this, specData]()
          {
             try
             {
                _ui->_spectrurmWidget->setFrequencyRange(
-                  data->centerFreqHz, data->bandwidthHz);
-               _ui->_spectrurmWidget->setData(data->magnitudesDb);
+                  specData->centerFreqHz, specData->bandwidthHz);
+               _ui->_spectrurmWidget->setData(specData->magnitudesDb);
 
                _ui->_detailedSpectrumWidget->setFrequencyRange(
-                  data->centerFreqHz, data->bandwidthHz);
-               _ui->_detailedSpectrumWidget->setData(data->magnitudesDb);
+                  specData->centerFreqHz, specData->bandwidthHz);
+               _ui->_detailedSpectrumWidget->setData(specData->magnitudesDb);
 
                _ui->_waterfallWidget->setFrequencyRange(
-                  data->centerFreqHz, data->bandwidthHz);
-               _ui->_waterfallWidget->addRow(data->magnitudesDb);
+                  specData->centerFreqHz, specData->bandwidthHz);
+               _ui->_waterfallWidget->addRow(specData->magnitudesDb);
             }
             catch (std::exception &exception)
             {
@@ -334,11 +335,11 @@ void MainWindow::connectDataHandlers()
 
    // --- I/Q data → ConstellationWidget ---
    _iqListenerId = _engine.iqDataHandler().registerListener(
-      [this](const std::shared_ptr<const SdrEngine::IqBuffer>& data)
+      [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
       {
-         QMetaObject::invokeMethod(this, [this, data]()
+         QMetaObject::invokeMethod(this, [this, iqData]()
          {
-            _ui->_constellationWidget->setData(data->samples);
+            _ui->_constellationWidget->setData(iqData->samples);
          });
       });
 }
@@ -362,9 +363,9 @@ void MainWindow::disconnectDataHandlers()
 // ============================================================================
 uint32_t MainWindow::sampleRateFromIndex(int index)
 {
-   if (index < static_cast<int>(std::ssize(SAMPLE_RATES)))
+   if (index < std::ssize(SAMPLE_RATES))
    {
-      return SAMPLE_RATES[index];
+      return SAMPLE_RATES[static_cast<size_t>(index)];
    }
    return 2'400'000;
 }
