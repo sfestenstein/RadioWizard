@@ -1,6 +1,5 @@
 #include "HighBandwidthPublisher.h"
 #include <chrono>
-#include <csignal>
 #include <string>
 #include <thread>
 
