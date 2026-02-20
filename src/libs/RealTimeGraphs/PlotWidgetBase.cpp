@@ -215,7 +215,7 @@ bool PlotWidgetBase::processBandwidthWheel(int angleDelta)
    {
       return false;
    }
-   const double newHz = _bwSelector.adjustHalfWidth(angleDelta);
+   const double newHz = _bwSelector.adjustHalfWidth(-angleDelta);
    syncBandwidthOverlay();
    emit bandwidthCursorHalfWidthChanged(newHz);
    update();
@@ -234,12 +234,7 @@ bool PlotWidgetBase::processBandwidthClick(const QPoint& pos)
       return false;
    }
 
-   if (_cursorOverlay.isBandwidthCursorLocked())
-   {
-      _cursorOverlay.unlockBandwidthCursor();
-      emit bandwidthCursorUnlocked();
-   }
-   else if (_cursorOverlay.lockBandwidthCursor(pos, area))
+   if (_cursorOverlay.lockBandwidthCursor(pos, area))
    {
       emit bandwidthCursorLocked(_cursorOverlay.lockedBandwidthCursorX());
    }

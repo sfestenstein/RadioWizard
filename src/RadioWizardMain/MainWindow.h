@@ -48,6 +48,12 @@ private:
    /// Remove DataHandler listeners on shutdown.
    void disconnectDataHandlers();
 
+   /// Switch constellation plot to use unfiltered IQ data.
+   void switchToUnfilteredIq();
+
+   /// Switch constellation plot to use filtered IQ data.
+   void switchToFilteredIq();
+
    /// Map the sample-rate combo index to Hz.
    static uint32_t sampleRateFromIndex(int index);
 
@@ -60,6 +66,7 @@ private:
 
    // Cached bandwidth cursor state for channel filter configuration.
    double _bwCursorHalfWidthHz{100'000.0};
+   double _bwCursorLockedX{0.5};  // Stored cursor position when locked (fraction [0, 1]).
 };
 
 #endif // MAINWINDOW_H

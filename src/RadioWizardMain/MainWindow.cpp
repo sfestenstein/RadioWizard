@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
           QString::fromStdString(RealTimeGraphs::ColorMap::paletteName(pal)),
           static_cast<int>(i));
    }
-   QObject::connect(_ui->_colorThemeCombo, &QComboBox::currentIndexChanged, this, [this](int idx)
+   connect(_ui->_colorThemeCombo, &QComboBox::currentIndexChanged, this, [this](int idx)
    {
       auto pal = RealTimeGraphs::ColorMap::paletteAt(static_cast<std::size_t>(idx));
       _ui->_spectrurmWidget->setColorMap(pal);
@@ -131,78 +131,68 @@ MainWindow::MainWindow(QWidget* parent)
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setMaxHoldEnabled);
    connect(_ui->_bwCursorButton, &QPushButton::toggled,
            this, &MainWindow::onBwCursorToggled);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::requestPeerCursorClear,
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::clearMeasCursors);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::requestPeerCursorClear,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::clearMeasCursors);
    onFftAverageChanged(33); 
 
    // Bandwidth cursor synchronisation between Spectrum and Waterfall
-   QObject::connect(_ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorHalfWidthChanged,
-                    _ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::setBandwidthCursorHalfWidthHz);
-   QObject::connect(_ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorHalfWidthChanged,
-                    _ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::setBandwidthCursorHalfWidthHz);
-   QObject::connect(_ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorLocked,
-                    _ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::lockBandwidthCursorAt);
-   QObject::connect(_ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorLocked,
-                    _ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::lockBandwidthCursorAt);
-   QObject::connect(_ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorUnlocked,
-                    _ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::unlockBandwidthCursor);
-   QObject::connect(_ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorUnlocked,
-                    _ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::unlockBandwidthCursor);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::bandwidthCursorHalfWidthChanged,
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setBandwidthCursorHalfWidthHz);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::bandwidthCursorHalfWidthChanged,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setBandwidthCursorHalfWidthHz);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::bandwidthCursorLocked,
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::lockBandwidthCursorAt);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::bandwidthCursorLocked,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::lockBandwidthCursorAt);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::bandwidthCursorUnlocked,
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::unlockBandwidthCursor);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::bandwidthCursorUnlocked,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::unlockBandwidthCursor);
 
-   // Bandwidth cursor → channel filter wiring
-   QObject::connect(_ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorLocked,
-                    this, &MainWindow::onBwCursorLocked);
-   QObject::connect(_ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorLocked,
-                    this, &MainWindow::onBwCursorLocked);
-   QObject::connect(_ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorUnlocked,
-                    this, &MainWindow::onBwCursorUnlocked);
-   QObject::connect(_ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorUnlocked,
-                    this, &MainWindow::onBwCursorUnlocked);
-   QObject::connect(_ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorHalfWidthChanged,
-                    this, &MainWindow::onBwCursorHalfWidthChanged);
-   QObject::connect(_ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorHalfWidthChanged,
-                    this, &MainWindow::onBwCursorHalfWidthChanged);
+   // Bandwidth cursor → MainWindow (channel filter + constellation switching)
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::bandwidthCursorLocked,
+           this, &MainWindow::onBwCursorLocked);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::bandwidthCursorLocked,
+           this, &MainWindow::onBwCursorLocked);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::bandwidthCursorUnlocked,
+           this, &MainWindow::onBwCursorUnlocked);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::bandwidthCursorUnlocked,
+           this, &MainWindow::onBwCursorUnlocked);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::bandwidthCursorHalfWidthChanged,
+           this, &MainWindow::onBwCursorHalfWidthChanged);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::bandwidthCursorHalfWidthChanged,
+           this, &MainWindow::onBwCursorHalfWidthChanged);
 
    // Tie the Spectrum and Waterfall widgets' color maps together.
    _ui->_spectrurmWidget->setXAxisVisible(false); // Waterfall below shows the shared X axis
 
    // Bidirectional X-axis linking
-   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::xViewChanged, _ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::setXViewRange);
-   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::xViewChanged, _ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::setXViewRange);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::xViewChanged, 
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setXViewRange);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::xViewChanged,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setXViewRange);
 
    // Bidirectional tracking-cursor linking (vertical line sync)
-   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorXChanged, _ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::setLinkedCursorX);
-   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorLeft, _ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::clearLinkedCursorX);
-   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorXChanged, _ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::setLinkedCursorX);
-   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorLeft, _ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::clearLinkedCursorX);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorXChanged, 
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setLinkedCursorX);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorLeft,
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::clearLinkedCursorX);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorXChanged, 
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setLinkedCursorX);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorLeft,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::clearLinkedCursorX);
 
    // Bidirectional measurement-cursor linking (vertical lines only)
-   QObject::connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::measCursorsChanged, _ui->_waterfallWidget,
-                    &RealTimeGraphs::WaterfallWidget::setLinkedMeasCursors);
-   QObject::connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::measCursorsChanged, _ui->_spectrurmWidget,
-                    &RealTimeGraphs::SpectrumWidget::setLinkedMeasCursors);
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::measCursorsChanged, 
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setLinkedMeasCursors);
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::measCursorsChanged,
+           _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setLinkedMeasCursors);
+
+   // Sync waterfall color bar range with spectrum color bar changes.
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::dbRangeChanged,
+           _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setDbRange);
 
 }
 
@@ -353,6 +343,7 @@ void MainWindow::onBwCursorToggled(bool checked)
    if (!checked)
    {
       _engine.setChannelFilterEnabled(false);
+      switchToUnfilteredIq();
    }
 }
 
@@ -360,17 +351,31 @@ void MainWindow::onBwCursorLocked(double xData)
 {
    // xData is a fraction [0, 1] of the total bandwidth.
    // 0.5 = centre frequency.  Convert to Hz offset.
+   _bwCursorLockedX = xData;  // Store for use when half-width changes.
+
+   const uint64_t centerFreqHz = _engine.getCenterFrequency();
    auto sampleRate = static_cast<double>(_engine.getSampleRate());
    const double offsetHz = (xData - 0.5) * sampleRate;
    const double bwHz = _bwCursorHalfWidthHz * 2.0;
 
-   _engine.configureChannelFilter(offsetHz, bwHz);
+   // Calculate min and max frequencies for the channel filter.
+   const double channelCenterHz = static_cast<double>(centerFreqHz) + offsetHz;
+   const double minFreqHz = channelCenterHz - bwHz / 2.0;
+   const double maxFreqHz = channelCenterHz + bwHz / 2.0;
+
+   _engine.configureChannelFilterFromMinMax(minFreqHz, maxFreqHz);
    _engine.setChannelFilterEnabled(true);
+   
+   // Switch constellation to display filtered IQ data.
+   switchToFilteredIq();
 }
 
 void MainWindow::onBwCursorUnlocked()
 {
    _engine.setChannelFilterEnabled(false);
+   
+   // Switch constellation back to unfiltered IQ data.
+   switchToUnfilteredIq();
 }
 
 void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
@@ -381,9 +386,17 @@ void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
    // update its bandwidth in real time.
    if (_engine.isChannelFilterEnabled())
    {
-      const double offsetHz = _engine.channelFilter().getCenterOffset();
+      const uint64_t centerFreqHz = _engine.getCenterFrequency();
+      auto sampleRate = static_cast<double>(_engine.getSampleRate());
+      const double offsetHz = (_bwCursorLockedX - 0.5) * sampleRate;
       const double bwHz = halfWidthHz * 2.0;
-      _engine.configureChannelFilter(offsetHz, bwHz);
+
+      // Calculate min and max frequencies for the channel filter.
+      const double channelCenterHz = static_cast<double>(centerFreqHz) + offsetHz;
+      const double minFreqHz = channelCenterHz - bwHz / 2.0;
+      const double maxFreqHz = channelCenterHz + bwHz / 2.0;
+
+      _engine.configureChannelFilterFromMinMax(minFreqHz, maxFreqHz);
    }
 }
 
@@ -396,58 +409,32 @@ void MainWindow::connectDataHandlers()
    _spectrumListenerId = _engine.spectrumDataHandler().registerListener(
       [this](const std::shared_ptr<const SdrEngine::SpectrumData>& specData)
       {
-         // DataHandler invokes listeners on its own thread.
-         // We need to marshal updates to the GUI thread.
-         QMetaObject::invokeMethod(this, [this, specData]()
+         try
          {
-            try
-            {
-               _ui->_spectrurmWidget->setFrequencyRange(
-                  specData->centerFreqHz, specData->bandwidthHz);
-               _ui->_spectrurmWidget->setData(specData->magnitudesDb);
+            _ui->_spectrurmWidget->setFrequencyRange(
+               specData->centerFreqHz, specData->bandwidthHz);
+            _ui->_spectrurmWidget->setData(specData->magnitudesDb);
+            _ui->_detailedSpectrumWidget->setFrequencyRange(
+               specData->centerFreqHz, specData->bandwidthHz);
+            _ui->_detailedSpectrumWidget->setData(specData->magnitudesDb);
 
-               _ui->_detailedSpectrumWidget->setFrequencyRange(
-                  specData->centerFreqHz, specData->bandwidthHz);
-               _ui->_detailedSpectrumWidget->setData(specData->magnitudesDb);
-
-               _ui->_waterfallWidget->setFrequencyRange(
-                  specData->centerFreqHz, specData->bandwidthHz);
-               _ui->_waterfallWidget->addRow(specData->magnitudesDb);
-            }
-            catch (std::exception &exception)
-            {
-               GPERROR("Caught Data Handler Exception: {}", exception.what());
-            }
-            catch(...)
-            {
-               GPERROR("Caught unknown Data Handler Exception");
-            }
-         });
+            _ui->_waterfallWidget->setFrequencyRange(
+               specData->centerFreqHz, specData->bandwidthHz);
+            _ui->_waterfallWidget->addRow(specData->magnitudesDb);
+         }
+         catch (std::exception &exception)
+         {
+            GPERROR("Caught Data Handler Exception: {}", exception.what());
+         }
+         catch(...)
+         {
+            GPERROR("Caught unknown Data Handler Exception");
+         }
       });
 
-   // --- I/Q data → ConstellationWidget ---
-   _iqListenerId = _engine.iqDataHandler().registerListener(
-      [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
-      {
-         QMetaObject::invokeMethod(this, [this, iqData]()
-         {
-            // Only use unfiltered IQ when no channel filter is active.
-            if (!_engine.isChannelFilterEnabled())
-            {
-               _ui->_constellationWidget->setData(iqData->samples);
-            }
-         });
-      });
-
-   // --- Filtered I/Q data → ConstellationWidget ---
-   _filteredIqListenerId = _engine.filteredIqDataHandler().registerListener(
-      [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
-      {
-         QMetaObject::invokeMethod(this, [this, iqData]()
-         {
-            _ui->_constellationWidget->setData(iqData->samples);
-         });
-      });
+   // --- I/Q data will be wired dynamically based on filter state ---
+   // Start with unfiltered data.
+   switchToUnfilteredIq();
 }
 
 void MainWindow::disconnectDataHandlers()
@@ -466,6 +453,57 @@ void MainWindow::disconnectDataHandlers()
    {
       _engine.filteredIqDataHandler().unregisterListener(_filteredIqListenerId);
       _filteredIqListenerId = -1;
+   }
+}
+
+// ============================================================================
+// Constellation data source switching
+// ============================================================================
+void MainWindow::switchToUnfilteredIq()
+{
+   // Unregister filtered listener if active.
+   if (_filteredIqListenerId >= 0)
+   {
+      _engine.filteredIqDataHandler().unregisterListener(_filteredIqListenerId);
+      _filteredIqListenerId = -1;
+   }
+
+   // Register unfiltered listener if not already active.
+   if (_iqListenerId < 0)
+   {
+      _iqListenerId = _engine.iqDataHandler().registerListener(
+         [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
+         {
+            QMetaObject::invokeMethod(this, [this, iqData]()
+            {
+               _ui->_constellationWidget->setData(iqData->samples);
+            });
+         });
+      GPINFO("Switched constellation to unfiltered I/Q data");
+   }
+}
+
+void MainWindow::switchToFilteredIq()
+{
+   // Unregister unfiltered listener if active.
+   if (_iqListenerId >= 0)
+   {
+      _engine.iqDataHandler().unregisterListener(_iqListenerId);
+      _iqListenerId = -1;
+   }
+
+   // Register filtered listener if not already active.
+   if (_filteredIqListenerId < 0)
+   {
+      _filteredIqListenerId = _engine.filteredIqDataHandler().registerListener(
+         [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
+         {
+            QMetaObject::invokeMethod(this, [this, iqData]()
+            {
+               _ui->_constellationWidget->setData(iqData->samples);
+            });
+         });
+      GPINFO("Switched constellation to filtered I/Q data");
    }
 }
 

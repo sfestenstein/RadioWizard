@@ -2,9 +2,9 @@
 
 #include <QPainter>
 #include <QPaintEvent>
+#include <QWheelEvent>
 
 #include <algorithm>
-#include <cmath>
 
 namespace RealTimeGraphs
 {
@@ -136,6 +136,26 @@ void ConstellationWidget::paintEvent(QPaintEvent* /*event*/)
    painter.drawText(-plotArea.height() / 2, 0, plotArea.height(), 15,
                     Qt::AlignCenter, "Quadrature (Q)");
    painter.restore();
+}
+
+void ConstellationWidget::wheelEvent(QWheelEvent* event)
+{
+   constexpr float ZOOM_FACTOR = 1.15F;
+   constexpr float MIN_AXIS_RANGE = 0.05F;
+   constexpr float MAX_AXIS_RANGE = 20.0F;
+
+   const int deltaY = event->angleDelta().y();
+   if (deltaY == 0)
+   {
+      QWidget::wheelEvent(event);
+      return;
+   }
+
+   const float factor = (deltaY > 0) ? (1.0F / ZOOM_FACTOR) : ZOOM_FACTOR;
+   _axisRange = std::clamp(_axisRange * factor, MIN_AXIS_RANGE, MAX_AXIS_RANGE);
+
+   update();
+   event->accept();
 }
 
 // ============================================================================

@@ -66,6 +66,10 @@ public:
    /// Set the decay rate for max hold (dB per second).  Default is 10 dB/s.
    void setMaxHoldDecayRate(float dbPerSecond);
 
+signals:
+   /// Emitted when the spectrum color-bar dB range changes.
+   void dbRangeChanged(float minDb, float maxDb);
+
 protected:
    void paintEvent(QPaintEvent* event) override;
    void resizeEvent(QResizeEvent* event) override;

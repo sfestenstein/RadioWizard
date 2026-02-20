@@ -388,58 +388,28 @@ void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
       return;
    }
 
-   // Determine the X data centre and half-width for the band.
-   double centerX     = 0.0;
-   double halfWidth   = _bwCursorHalfWidthFrac;
-   bool   shouldDraw  = false;
-
-   if (_bwCursorLocked)
+   auto drawBand = [&](double centerX,
+                       double halfWidth,
+                       const QColor& bandColor,
+                       const QColor& edgeColor,
+                       Qt::PenStyle edgeStyle)
    {
-      centerX    = _bwCursorLockedX;
-      shouldDraw = true;
-   }
-   else if (_cursorInPlot && _pixelToData)
-   {
-      const auto data = _pixelToData(_cursorPos, area);
-      centerX    = data.x;
-      shouldDraw = true;
-   }
-   else if (_linkedTrackingX.has_value())
-   {
-      centerX    = *_linkedTrackingX;
-      shouldDraw = true;
-   }
+      const DataPoint leftPt{centerX - halfWidth, 0.0};
+      const DataPoint rightPt{centerX + halfWidth, 0.0};
+      const QPoint leftPx  = _dataToPixel(leftPt, area);
+      const QPoint rightPx = _dataToPixel(rightPt, area);
 
-   // Also draw linked bandwidth lock from peer widget
-   if (_linkedBwLockActive)
-   {
-      centerX    = _linkedBwLockX;
-      halfWidth  = _linkedBwLockHalfWidth;
-      shouldDraw = true;
-   }
+      const int x1 = std::clamp(leftPx.x(), area.left(), area.right());
+      const int x2 = std::clamp(rightPx.x(), area.left(), area.right());
 
-   if (!shouldDraw)
-   {
-      return;
-   }
+      if (x2 <= x1)
+      {
+         return;
+      }
 
-   // Convert data-space boundaries to pixel positions.
-   const DataPoint leftPt{centerX - halfWidth, 0.0};
-   const DataPoint rightPt{centerX + halfWidth, 0.0};
-   const QPoint leftPx  = _dataToPixel(leftPt, area);
-   const QPoint rightPx = _dataToPixel(rightPt, area);
-
-   const int x1 = std::clamp(leftPx.x(), area.left(), area.right());
-   const int x2 = std::clamp(rightPx.x(), area.left(), area.right());
-
-   if (x2 > x1)
-   {
-      const QColor bandColor(160, 160, 160, 50);
       painter.fillRect(QRect(x1, area.top(), x2 - x1, area.height()), bandColor);
 
-      // Draw thin border lines at the edges
-      const QColor edgeColor(180, 180, 180, 120);
-      painter.setPen(QPen(edgeColor, 1, Qt::SolidLine));
+      painter.setPen(QPen(edgeColor, 1, edgeStyle));
       if (leftPx.x() >= area.left() && leftPx.x() <= area.right())
       {
          painter.drawLine(leftPx.x(), area.top(), leftPx.x(), area.bottom());
@@ -448,6 +418,43 @@ void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
       {
          painter.drawLine(rightPx.x(), area.top(), rightPx.x(), area.bottom());
       }
+   };
+
+   // Draw selected (locked) band first so hover preview can be seen on top.
+   if (_bwCursorLocked)
+   {
+      drawBand(_bwCursorLockedX,
+               _bwCursorHalfWidthFrac,
+               QColor(160, 160, 160, 60),
+               QColor(190, 190, 190, 160),
+               Qt::SolidLine);
+   }
+   else if (_linkedBwLockActive)
+   {
+      drawBand(_linkedBwLockX,
+               _linkedBwLockHalfWidth,
+               QColor(160, 160, 160, 60),
+               QColor(190, 190, 190, 160),
+               Qt::SolidLine);
+   }
+
+   // Draw potential selection around current mouse position.
+   if (_cursorInPlot && _pixelToData)
+   {
+      const auto hoverData = _pixelToData(_cursorPos, area);
+      drawBand(hoverData.x,
+               _bwCursorHalfWidthFrac,
+               QColor(160, 160, 160, 35),
+               QColor(180, 180, 180, 120),
+               Qt::DashLine);
+   }
+   else if (!_bwCursorLocked && !_linkedBwLockActive && _linkedTrackingX.has_value())
+   {
+      drawBand(*_linkedTrackingX,
+               _bwCursorHalfWidthFrac,
+               QColor(160, 160, 160, 35),
+               QColor(180, 180, 180, 120),
+               Qt::DashLine);
    }
 }
 

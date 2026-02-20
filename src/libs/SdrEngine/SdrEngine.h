@@ -123,6 +123,11 @@ public:
    /// @param bandwidthHz     Channel bandwidth (Hz).
    void configureChannelFilter(double centerOffsetHz, double bandwidthHz);
 
+   /// Configure the channel filter using min and max frequencies.
+   /// @param minFreqHz   Minimum frequency of the channel to extract (Hz).
+   /// @param maxFreqHz   Maximum frequency of the channel to extract (Hz).
+   void configureChannelFilterFromMinMax(double minFreqHz, double maxFreqHz);
+
    /// Enable or disable channel filtering.
    void setChannelFilterEnabled(bool enabled);
 

@@ -124,7 +124,7 @@ protected:
    /// Returns true if the event was consumed (caller should accept).
    bool processBandwidthWheel(int angleDelta);
 
-   /// Process bandwidth-cursor click (lock/unlock toggle).
+   /// Process bandwidth-cursor click (set/update locked position).
    /// Returns true if the event was consumed.
    bool processBandwidthClick(const QPoint& pos);
 

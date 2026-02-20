@@ -742,9 +742,13 @@ void SpectrumWidget::leaveEvent(QEvent* event)
 
 void SpectrumWidget::syncColorBar()
 {
-   _colorBar->setDbRange(static_cast<float>(_viewMinDb),
-                         static_cast<float>(_viewMaxDb));
+   auto minDb = static_cast<float>(_viewMinDb);
+   auto maxDb = static_cast<float>(_viewMaxDb);
+
+   _colorBar->setDbRange(minDb, maxDb);
    _colorBar->setColorMap(_colorMap);
+
+   emit dbRangeChanged(minDb, maxDb);
 }
 
 void SpectrumWidget::onViewRangeChanged()

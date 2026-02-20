@@ -48,6 +48,15 @@ public:
    void configure(double centerOffsetHz, double bandwidthHz,
                   double inputSampleRate);
 
+   /// Configure the channel to extract using min and max frequencies.
+   ///
+   /// @param minFreqHz       Minimum frequency of the channel (Hz).
+   /// @param maxFreqHz       Maximum frequency of the channel (Hz).
+   /// @param centerFreqHz    Center frequency of the wideband signal (Hz).
+   /// @param inputSampleRate Full wideband sample rate in Hz.
+   void configureFromMinMax(double minFreqHz, double maxFreqHz,
+                            double centerFreqHz, double inputSampleRate);
+
    /// @return true if configure() has been called with valid parameters.
    [[nodiscard]] bool isConfigured() const;
 

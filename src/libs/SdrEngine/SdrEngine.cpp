@@ -189,6 +189,14 @@ void SdrEngine::configureChannelFilter(double centerOffsetHz, double bandwidthHz
                             static_cast<double>(_sampleRateHz.load()));
 }
 
+void SdrEngine::configureChannelFilterFromMinMax(double minFreqHz, double maxFreqHz)
+{
+   const uint64_t centerFreqHz = _centerFreqHz.load();
+   _channelFilter.configureFromMinMax(minFreqHz, maxFreqHz,
+                                      static_cast<double>(centerFreqHz),
+                                      static_cast<double>(_sampleRateHz.load()));
+}
+
 void SdrEngine::setChannelFilterEnabled(bool enabled)
 {
    _channelFilter.setEnabled(enabled);
@@ -438,7 +446,7 @@ void SdrEngine::processingLoop()
             // EMA: avg[n] = alpha * avg[n-1] + (1 - alpha) * new[n]
             for (std::size_t i = 0; i < magnitudesDb.size(); ++i)
             {
-               _fftAverage[i] = alpha * _fftAverage[i] + (1.0F - alpha) * magnitudesDb[i];
+               _fftAverage[i] = (alpha * _fftAverage[i]) + ((1.0F - alpha) * magnitudesDb[i]);
             }
             magnitudesDb = _fftAverage;
          }

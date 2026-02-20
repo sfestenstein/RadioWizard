@@ -71,6 +71,17 @@ void ChannelFilter::configure(double centerOffsetHz, double bandwidthHz,
           _centerOffsetHz, _bandwidthHz, _decimationRate, _outputSampleRate);
 }
 
+void ChannelFilter::configureFromMinMax(double minFreqHz, double maxFreqHz,
+                                        double centerFreqHz, double inputSampleRate)
+{
+   // Convert min/max frequencies to center offset and bandwidth.
+   const double bandwidthHz = maxFreqHz - minFreqHz;
+   const double channelCenterHz = (minFreqHz + maxFreqHz) / 2.0;
+   const double centerOffsetHz = channelCenterHz - centerFreqHz;
+
+   configure(centerOffsetHz, bandwidthHz, inputSampleRate);
+}
+
 bool ChannelFilter::isConfigured() const
 {
    const std::lock_guard<std::mutex> lock(_mutex);

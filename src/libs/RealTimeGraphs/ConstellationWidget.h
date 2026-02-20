@@ -68,6 +68,7 @@ public:
 
 protected:
    void paintEvent(QPaintEvent* event) override;
+   void wheelEvent(QWheelEvent* event) override;
 
 private:
    void drawBackground(QPainter& painter, const QRect& area);
