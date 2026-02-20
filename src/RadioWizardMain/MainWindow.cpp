@@ -360,8 +360,8 @@ void MainWindow::onBwCursorLocked(double xData)
 
    // Calculate min and max frequencies for the channel filter.
    const double channelCenterHz = static_cast<double>(centerFreqHz) + offsetHz;
-   const double minFreqHz = channelCenterHz - bwHz / 2.0;
-   const double maxFreqHz = channelCenterHz + bwHz / 2.0;
+   const double minFreqHz = channelCenterHz - (bwHz / 2.0);
+   const double maxFreqHz = channelCenterHz + (bwHz / 2.0);
 
    _engine.configureChannelFilterFromMinMax(minFreqHz, maxFreqHz);
    _engine.setChannelFilterEnabled(true);
@@ -393,8 +393,8 @@ void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
 
       // Calculate min and max frequencies for the channel filter.
       const double channelCenterHz = static_cast<double>(centerFreqHz) + offsetHz;
-      const double minFreqHz = channelCenterHz - bwHz / 2.0;
-      const double maxFreqHz = channelCenterHz + bwHz / 2.0;
+      const double minFreqHz = channelCenterHz - (bwHz / 2.0);
+      const double maxFreqHz = channelCenterHz + (bwHz / 2.0);
 
       _engine.configureChannelFilterFromMinMax(minFreqHz, maxFreqHz);
    }
