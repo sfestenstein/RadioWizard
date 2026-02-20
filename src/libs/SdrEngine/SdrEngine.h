@@ -2,6 +2,7 @@
 #define SDRENGINE_H_
 
 // Project headers
+#include "ChannelFilter.h"
 #include "DataHandler.h"
 #include "FftProcessor.h"
 #include "ISdrDevice.h"
@@ -115,6 +116,22 @@ public:
    /// @return true if DC spike removal is enabled.
    [[nodiscard]] bool isDcSpikeRemovalEnabled() const;
 
+   // -- Channel filter controls ---------------------------------------------
+
+   /// Configure the channel filter for bandwidth-selected IQ extraction.
+   /// @param centerOffsetHz  Offset from centre frequency (Hz).
+   /// @param bandwidthHz     Channel bandwidth (Hz).
+   void configureChannelFilter(double centerOffsetHz, double bandwidthHz);
+
+   /// Enable or disable channel filtering.
+   void setChannelFilterEnabled(bool enabled);
+
+   /// @return true if the channel filter is enabled.
+   [[nodiscard]] bool isChannelFilterEnabled() const;
+
+   /// @return Reference to the channel filter (for advanced queries).
+   [[nodiscard]] const ChannelFilter& channelFilter() const;
+
    // -- Start / stop --------------------------------------------------------
 
    /// Open the device and begin streaming + processing.
@@ -136,6 +153,9 @@ public:
    /// DataHandler that publishes IqBuffer chunks for constellation display.
    [[nodiscard]] CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>& iqDataHandler();
 
+   /// DataHandler that publishes filtered (channel-extracted) IqBuffer chunks.
+   [[nodiscard]] CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>& filteredIqDataHandler();
+
 private:
    /// Called from the device's async callback thread.
    void onRawIqData(const uint8_t* data, std::size_t length);
@@ -150,6 +170,7 @@ private:
    // -- Data handlers -------------------------------------------------------
    std::unique_ptr<CommonUtils::DataHandler<std::shared_ptr<const SpectrumData>>> _spectrumHandler;
    std::unique_ptr<CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>> _iqHandler;
+   std::unique_ptr<CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>> _filteredIqHandler;
 
    // -- Accumulation buffer (device callback → processing thread) -----------
    std::mutex _bufMutex;
@@ -171,6 +192,9 @@ private:
 
    // -- DC spike removal ----------------------------------------------------
    std::atomic<bool> _dcSpikeRemovalEnabled{true};     // Default: enabled
+
+   // -- Channel filter -------------------------------------------------------
+   ChannelFilter _channelFilter;
 };
 
 } // namespace SdrEngine

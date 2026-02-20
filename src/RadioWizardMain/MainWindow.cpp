@@ -159,6 +159,26 @@ MainWindow::MainWindow(QWidget* parent)
                     _ui->_spectrurmWidget,
                     &RealTimeGraphs::SpectrumWidget::unlockBandwidthCursor);
 
+   // Bandwidth cursor → channel filter wiring
+   QObject::connect(_ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorLocked,
+                    this, &MainWindow::onBwCursorLocked);
+   QObject::connect(_ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorLocked,
+                    this, &MainWindow::onBwCursorLocked);
+   QObject::connect(_ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorUnlocked,
+                    this, &MainWindow::onBwCursorUnlocked);
+   QObject::connect(_ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorUnlocked,
+                    this, &MainWindow::onBwCursorUnlocked);
+   QObject::connect(_ui->_spectrurmWidget,
+                    &RealTimeGraphs::SpectrumWidget::bandwidthCursorHalfWidthChanged,
+                    this, &MainWindow::onBwCursorHalfWidthChanged);
+   QObject::connect(_ui->_waterfallWidget,
+                    &RealTimeGraphs::WaterfallWidget::bandwidthCursorHalfWidthChanged,
+                    this, &MainWindow::onBwCursorHalfWidthChanged);
+
    // Tie the Spectrum and Waterfall widgets' color maps together.
    _ui->_spectrurmWidget->setXAxisVisible(false); // Waterfall below shows the shared X axis
 
@@ -328,6 +348,43 @@ void MainWindow::onBwCursorToggled(bool checked)
 {
    _ui->_spectrurmWidget->setBandwidthCursorEnabled(checked);
    _ui->_waterfallWidget->setBandwidthCursorEnabled(checked);
+
+   // Disable channel filter when BW cursor is turned off.
+   if (!checked)
+   {
+      _engine.setChannelFilterEnabled(false);
+   }
+}
+
+void MainWindow::onBwCursorLocked(double xData)
+{
+   // xData is a fraction [0, 1] of the total bandwidth.
+   // 0.5 = centre frequency.  Convert to Hz offset.
+   auto sampleRate = static_cast<double>(_engine.getSampleRate());
+   const double offsetHz = (xData - 0.5) * sampleRate;
+   const double bwHz = _bwCursorHalfWidthHz * 2.0;
+
+   _engine.configureChannelFilter(offsetHz, bwHz);
+   _engine.setChannelFilterEnabled(true);
+}
+
+void MainWindow::onBwCursorUnlocked()
+{
+   _engine.setChannelFilterEnabled(false);
+}
+
+void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
+{
+   _bwCursorHalfWidthHz = halfWidthHz;
+
+   // If the channel filter is already enabled (cursor locked),
+   // update its bandwidth in real time.
+   if (_engine.isChannelFilterEnabled())
+   {
+      const double offsetHz = _engine.channelFilter().getCenterOffset();
+      const double bwHz = halfWidthHz * 2.0;
+      _engine.configureChannelFilter(offsetHz, bwHz);
+   }
 }
 
 // ============================================================================
@@ -374,6 +431,20 @@ void MainWindow::connectDataHandlers()
       {
          QMetaObject::invokeMethod(this, [this, iqData]()
          {
+            // Only use unfiltered IQ when no channel filter is active.
+            if (!_engine.isChannelFilterEnabled())
+            {
+               _ui->_constellationWidget->setData(iqData->samples);
+            }
+         });
+      });
+
+   // --- Filtered I/Q data → ConstellationWidget ---
+   _filteredIqListenerId = _engine.filteredIqDataHandler().registerListener(
+      [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
+      {
+         QMetaObject::invokeMethod(this, [this, iqData]()
+         {
             _ui->_constellationWidget->setData(iqData->samples);
          });
       });
@@ -390,6 +461,11 @@ void MainWindow::disconnectDataHandlers()
    {
       _engine.iqDataHandler().unregisterListener(_iqListenerId);
       _iqListenerId = -1;
+   }
+   if (_filteredIqListenerId >= 0)
+   {
+      _engine.filteredIqDataHandler().unregisterListener(_filteredIqListenerId);
+      _filteredIqListenerId = -1;
    }
 }
 

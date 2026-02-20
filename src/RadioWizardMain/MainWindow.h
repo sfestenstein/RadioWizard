@@ -37,6 +37,9 @@ private slots:
    void onFftAverageChanged(int value);
    void onDcSpikeRemovalToggled(bool checked);
    void onBwCursorToggled(bool checked);
+   void onBwCursorLocked(double xData);
+   void onBwCursorUnlocked();
+   void onBwCursorHalfWidthChanged(double halfWidthHz);
 
 private:
    /// Register DataHandler listeners for spectrum and I/Q data.
@@ -53,6 +56,10 @@ private:
 
    int _spectrumListenerId{-1};
    int _iqListenerId{-1};
+   int _filteredIqListenerId{-1};
+
+   // Cached bandwidth cursor state for channel filter configuration.
+   double _bwCursorHalfWidthHz{100'000.0};
 };
 
 #endif // MAINWINDOW_H

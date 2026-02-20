@@ -20,6 +20,7 @@ SdrEngine::SdrEngine()
    : _fft{2048, WindowFunction::BlackmanHarris}
    , _spectrumHandler{std::make_unique<CommonUtils::DataHandler<std::shared_ptr<const SpectrumData>>>()}
    , _iqHandler{std::make_unique<CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>>()}
+   , _filteredIqHandler{std::make_unique<CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>>()}
 {
 }
 
@@ -29,6 +30,7 @@ SdrEngine::~SdrEngine()
    // Destroy handlers before the engine goes away so listener threads exit.
    _spectrumHandler.reset();
    _iqHandler.reset();
+   _filteredIqHandler.reset();
 }
 
 // ============================================================================
@@ -178,6 +180,31 @@ bool SdrEngine::isDcSpikeRemovalEnabled() const
 }
 
 // ============================================================================
+// Channel filter controls
+// ============================================================================
+
+void SdrEngine::configureChannelFilter(double centerOffsetHz, double bandwidthHz)
+{
+   _channelFilter.configure(centerOffsetHz, bandwidthHz,
+                            static_cast<double>(_sampleRateHz.load()));
+}
+
+void SdrEngine::setChannelFilterEnabled(bool enabled)
+{
+   _channelFilter.setEnabled(enabled);
+}
+
+bool SdrEngine::isChannelFilterEnabled() const
+{
+   return _channelFilter.isEnabled();
+}
+
+const ChannelFilter& SdrEngine::channelFilter() const
+{
+   return _channelFilter;
+}
+
+// ============================================================================
 // Start / stop
 // ============================================================================
 
@@ -280,6 +307,11 @@ CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>& SdrEngine::iqDataHand
    return *_iqHandler;
 }
 
+CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>& SdrEngine::filteredIqDataHandler()
+{
+   return *_filteredIqHandler;
+}
+
 // ============================================================================
 // Device callback → accumulation buffer
 // ============================================================================
@@ -370,6 +402,22 @@ void SdrEngine::processingLoop()
       iqBuf->sampleRateHz = static_cast<double>(_sampleRateHz.load());
       iqBuf->timestamp    = std::chrono::steady_clock::now();
       _iqHandler->signalData(iqBuf);
+
+      // Channel-filter the I/Q block and publish if enabled.
+      if (_channelFilter.isEnabled())
+      {
+         auto filteredSamples = _channelFilter.process(block);
+         if (!filteredSamples.empty())
+         {
+            auto filteredBuf = std::make_shared<IqBuffer>();
+            filteredBuf->samples      = std::move(filteredSamples);
+            filteredBuf->centerFreqHz = iqBuf->centerFreqHz +
+                                       _channelFilter.getCenterOffset();
+            filteredBuf->sampleRateHz = _channelFilter.getOutputSampleRate();
+            filteredBuf->timestamp    = iqBuf->timestamp;
+            _filteredIqHandler->signalData(filteredBuf);
+         }
+      }
 
       // Run the FFT.
       auto magnitudesDb = _fft.process(block);
