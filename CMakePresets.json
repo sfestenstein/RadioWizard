@@ -96,6 +96,19 @@
             "ENABLE_COVERAGE": "ON",
             "ENABLE_SANITIZERS": "OFF"
          }
+      },
+      {
+         "name": "ci-macos",
+         "displayName": "CI macOS",
+         "inherits": "conan-default",
+         "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "CMAKE_MAP_IMPORTED_CONFIG_DEBUG": "Release",
+            "BUILD_TESTS": "ON",
+            "ENABLE_COVERAGE": "OFF",
+            "ENABLE_SANITIZERS": "OFF"
+         }
       }
    ],
    "buildPresets": [
@@ -118,6 +131,10 @@
       {
          "name": "ci-linux",
          "configurePreset": "ci-linux"
+      },
+      {
+         "name": "ci-macos",
+         "configurePreset": "ci-macos"
       }
    ],
    "testPresets": [
@@ -151,6 +168,14 @@
       {
          "name": "ci-linux",
          "configurePreset": "ci-linux",
+         "output": {
+            "outputOnFailure": true,
+            "verbosity": "default"
+         }
+      },
+      {
+         "name": "ci-macos",
+         "configurePreset": "ci-macos",
          "output": {
             "outputOnFailure": true,
             "verbosity": "default"
