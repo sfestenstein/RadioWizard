@@ -1,0 +1,17 @@
+# =============================================================================
+# LeakSanitizer (LSAN) suppressions for RadioWizard
+# =============================================================================
+#
+# Usage:
+#   LSAN_OPTIONS=suppressions=<path>/lsan_suppressions.txt ./RadioWizardMain
+#
+# These suppress known leaks in third-party libraries that we cannot fix
+# directly. Each entry should include a comment explaining why it's suppressed.
+#
+# Format: leak:<symbol_or_module>
+# =============================================================================
+
+# liquid-dsp: msresamp_crcf internally allocates qs1dsearch objects during
+# construction for optimising filter parameters. msresamp_crcf_destroy() does
+# not free all of them. This is a known issue in liquid-dsp.
+leak:qs1dsearch_create

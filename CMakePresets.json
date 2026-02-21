@@ -20,6 +20,9 @@
          "displayName": "Debug with Clang-Tidy",
          "inherits": "conan-default",
          "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "environment": {
+            "LSAN_OPTIONS": "suppressions=${sourceDir}/sanitizer_suppressions/lsan_suppressions.txt"
+         },
          "cacheVariables": {
             "CMAKE_BUILD_TYPE": "Debug",
             "CMAKE_MAP_IMPORTED_CONFIG_DEBUG": "Release",
@@ -33,6 +36,9 @@
          "displayName": "Debug",
          "inherits": "conan-default",
          "toolchainFile": "${sourceDir}/build/build/Release/generators/conan_toolchain.cmake",
+         "environment": {
+            "LSAN_OPTIONS": "suppressions=${sourceDir}/sanitizer_suppressions/lsan_suppressions.txt"
+         },
          "cacheVariables": {
             "CMAKE_BUILD_TYPE": "Debug",
             "CMAKE_MAP_IMPORTED_CONFIG_DEBUG": "Release",
@@ -118,6 +124,9 @@
       {
          "name": "debug",
          "configurePreset": "debug",
+         "environment": {
+            "LSAN_OPTIONS": "suppressions=${sourceDir}/sanitizer_suppressions/lsan_suppressions.txt"
+         },
          "output": {
             "outputOnFailure": true,
             "verbosity": "default"
