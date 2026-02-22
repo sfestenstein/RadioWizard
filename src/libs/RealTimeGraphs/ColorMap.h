@@ -11,7 +11,10 @@
 namespace RealTimeGraphs
 {
 
-/// A packed RGBA color.
+/**
+ * @class Color
+ * @brief A packed RGBA color.
+ */
 struct Color
 {
    uint8_t r{0};
@@ -20,14 +23,17 @@ struct Color
    uint8_t a{255};
 };
 
-/// Pre-built color maps for spectrum and waterfall displays.
-///
-/// Each map is a 256-entry lookup table (LUT).  Call `map(t)` with a
-/// normalised value in [0, 1] to retrieve the corresponding color.
+/**
+ * @class ColorMap
+ * @brief Pre-built color maps for spectrum and waterfall displays.
+ *
+ * Each map is a 256-entry lookup table (LUT).  Call `map(t)` with a
+ * normalised value in [0, 1] to retrieve the corresponding color.
+ */
 class ColorMap
 {
 public:
-   /// Built-in palette names.
+   /** @brief Built-in palette names. */
    enum class Palette : std::uint8_t
    {
       Viridis,     ///< Perceptually uniform, blue-green-yellow
@@ -38,26 +44,28 @@ public:
       RoyGB        ///< Red-Orange-Yellow-Green-Blue
    };
 
-   /// Build a LUT for the requested palette.
+   /** @brief Build a LUT for the requested palette. */
    explicit ColorMap(Palette palette = Palette::Viridis);
 
-   /// Look up a color for a normalised value in [0, 1].
-   /// Values outside the range are clamped.
+   /**
+    * @brief Look up a color for a normalised value in [0, 1].
+    * Values outside the range are clamped.
+    */
    [[nodiscard]] Color map(float t) const;
 
-   /// Direct access to the 256-entry LUT.
+   /** @brief Direct access to the 256-entry LUT. */
    [[nodiscard]] const std::array<Color, 256>& lut() const { return _lut; }
 
-   /// Human-readable name of the active palette.
+   /** @brief Human-readable name of the active palette. */
    [[nodiscard]] const std::string& name() const { return _name; }
 
-   /// Number of available built-in palettes.
+   /** @brief Number of available built-in palettes. */
    [[nodiscard]] static std::size_t paletteCount();
 
-   /// Get palette enum by index (for UI combo-box population).
+   /** @brief Get palette enum by index (for UI combo-box population). */
    [[nodiscard]] static Palette paletteAt(std::size_t index);
 
-   /// Get human-readable name of a palette.
+   /** @brief Get human-readable name of a palette. */
    [[nodiscard]] static std::string paletteName(Palette palette);
 
 private:
@@ -67,10 +75,10 @@ private:
    void buildGrayscale();
    void buildTurbo();
    void buildRoyGB();
-   /// Linearly interpolate between two colors.
+   // Linearly interpolate between two colors.
    [[nodiscard]] static Color lerp(const Color& a, const Color& b, float t);
 
-   /// Build a gradient LUT from a list of key-color stops.
+   // Build a gradient LUT from a list of key-color stops.
    void buildGradient(const std::vector<std::pair<float, Color>>& stops);
 
    std::array<Color, 256> _lut{};

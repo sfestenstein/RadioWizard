@@ -12,6 +12,7 @@ namespace Vita49_2
 {
 
 /**
+ * @class SignalDataPacket
  * @brief Encodes and decodes VITA 49.2 Signal Data (IF Data) packets.
  *
  * Signal Data packets carry 16-bit signed I/Q sample pairs.

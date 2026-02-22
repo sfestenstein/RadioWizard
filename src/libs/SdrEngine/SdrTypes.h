@@ -11,10 +11,13 @@
 namespace SdrEngine
 {
 
-/// Single I/Q sample as interleaved float.
+/** @brief Single I/Q sample as interleaved float. */
 using IqSample = std::complex<float>;
 
-/// A chunk of I/Q samples with metadata.
+/**
+ * @class IqBuffer
+ * @brief A chunk of I/Q samples with metadata.
+ */
 struct IqBuffer
 {
    std::vector<IqSample> samples;
@@ -23,7 +26,10 @@ struct IqBuffer
    std::chrono::steady_clock::time_point timestamp;
 };
 
-/// FFT magnitude spectrum with metadata.
+/**
+ * @class SpectrumData
+ * @brief FFT magnitude spectrum with metadata.
+ */
 struct SpectrumData
 {
    std::vector<float> magnitudesDb;   ///< Power in dB (typically negative).
@@ -32,7 +38,7 @@ struct SpectrumData
    size_t fftSize{0};
 };
 
-/// FFT windowing function choices.
+/** @brief FFT windowing function choices. */
 enum class WindowFunction : uint8_t
 {
    Rectangular,
@@ -41,14 +47,17 @@ enum class WindowFunction : uint8_t
    FlatTop
 };
 
-/// SDR gain mode.
+/** @brief SDR gain mode. */
 enum class GainMode : uint8_t
 {
    Automatic,
    Manual
 };
 
-/// Information about a connected SDR device.
+/**
+ * @class DeviceInfo
+ * @brief Information about a connected SDR device.
+ */
 struct DeviceInfo
 {
    int index{-1};

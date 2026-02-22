@@ -16,14 +16,17 @@ namespace RealTimeGraphs
 
 class ColorBarStrip; // forward declaration
 
-/// Custom QPainter-based spectrum / FFT bar-chart widget.
-///
-/// Renders a horizontal frequency axis and a vertical amplitude axis.
-/// Each bin is drawn as a filled vertical bar whose color comes from
-/// the active ColorMap.
-///
-/// Call `setData()` from any thread; the widget double-buffers the data
-/// and schedules a repaint.
+/**
+ * @class SpectrumWidget
+ * @brief Custom QPainter-based spectrum / FFT bar-chart widget.
+ *
+ * Renders a horizontal frequency axis and a vertical amplitude axis.
+ * Each bin is drawn as a filled vertical bar whose color comes from
+ * the active ColorMap.
+ *
+ * Call `setData()` from any thread; the widget double-buffers the data
+ * and schedules a repaint.
+ */
 class SpectrumWidget : public PlotWidgetBase
 {
    Q_OBJECT
@@ -31,43 +34,49 @@ class SpectrumWidget : public PlotWidgetBase
 public:
    explicit SpectrumWidget(QWidget* parent = nullptr);
 
-   /// Replace the current spectrum data.  The vector is copied.
-   /// Thread-safe — can be called from a producer thread.
-   /// @param magnitudes  Linear magnitudes (0 … 1 normalised).
+   /**
+    * @brief Replace the current spectrum data.  The vector is copied.
+    * Thread-safe — can be called from a producer thread.
+    * @param magnitudes  Linear magnitudes (0 … 1 normalised).
+    */
    void setData(const std::vector<float>& magnitudes);
 
-   /// Set the dB display range (e.g., -120 to 0).
+   /** @brief Set the dB display range (e.g., -120 to 0). */
    void setDbRange(float minDb, float maxDb);
 
-   /// Set whether data is already in dB (true) or linear (false).
+   /** @brief Set whether data is already in dB (true) or linear (false). */
    void setInputIsDb(bool isDb);
 
-   /// Change the color palette.
+   /** @brief Change the color palette. */
    void setColorMap(ColorMap::Palette palette);
 
-   /// Set number of horizontal grid lines.
+   /** @brief Set number of horizontal grid lines. */
    void setGridLines(int count);
 
-   /// Reset the view to show the full data range (both axes).
-   /// This can also be triggered by double-clicking the plot.
+   /**
+    * @brief Reset the view to show the full data range (both axes).
+    * This can also be triggered by double-clicking the plot.
+    */
    void resetView();
 
-   /// Show or hide the built-in color-bar legend.
+   /** @brief Show or hide the built-in color-bar legend. */
    void setColorBarVisible(bool visible);
 
-   /// Show or hide the X-axis labels and tick marks.
-   /// When hidden the bottom margin is collapsed, useful when stacked
-   /// above another widget that shows the same X axis.
+   /**
+    * @brief Show or hide the X-axis labels and tick marks.
+    * When hidden the bottom margin is collapsed, useful when stacked
+    * above another widget that shows the same X axis.
+    */
    void setXAxisVisible(bool visible);
 
-   /// Enable or disable decaying max-hold trace.
+   /** @brief Enable or disable decaying max-hold trace. */
    void setMaxHoldEnabled(bool enabled);
 
-   /// Set the decay rate for max hold (dB per second).  Default is 10 dB/s.
+   /** @brief Set the decay rate for max hold (dB per second).  Default is 10 dB/s. */
    void setMaxHoldDecayRate(float dbPerSecond);
 
 signals:
-   /// Emitted when the spectrum color-bar dB range changes.
+   /** @brief Emitted when the spectrum color-bar dB range changes. */
    void dbRangeChanged(float minDb, float maxDb);
 
 protected:
@@ -91,10 +100,10 @@ private:
    void drawLabels(QPainter& painter, const QRect& area) const;
    void drawFps(QPainter& painter, const QRect& area) const;
 
-   /// Convert a linear magnitude to normalised [0, 1] within the current view range.
+   // Convert a linear magnitude to normalised [0, 1] within the current view range.
    [[nodiscard]] float toNormalised(float value) const;
 
-   /// Sync the color-bar strip with the current view range and palette.
+   // Sync the color-bar strip with the current view range and palette.
    void syncColorBar();
 
    mutable std::mutex _mutex;

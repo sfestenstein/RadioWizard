@@ -12,6 +12,7 @@ namespace Vita49_2
 {
 
 /**
+ * @class ParsedPacket
  * @brief Result of parsing any single VITA 49.2 packet.
  */
 struct ParsedPacket
@@ -31,6 +32,7 @@ struct ParsedPacket
 };
 
 /**
+ * @class Vita49Codec
  * @brief High-level VITA 49.2 codec for encoding and decoding packet streams.
  *
  * This class wraps SignalDataPacket and ContextPacket to provide

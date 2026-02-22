@@ -9,8 +9,9 @@
 #include <google/protobuf/message.h>
 
 /**
+ * @class FragmentHeader
  * @brief Fragment header structure for UDP packet fragmentation.
- * 
+ *
  * This 12-byte header is prepended to each UDP packet to enable
  * reassembly of large messages that exceed the MTU.
  */
@@ -24,8 +25,9 @@ struct FragmentHeader
 } __attribute__((packed));
 
 /**
+ * @class HighBandwidthPublisher
  * @brief High-bandwidth publisher using raw UDP multicast.
- * 
+ *
  * This class provides fast, fire-and-forget messaging optimized for high-bandwidth,
  * high-frequency data transmission. It uses raw UDP multicast sockets for minimal
  * overhead and automatic fragmentation for large messages.

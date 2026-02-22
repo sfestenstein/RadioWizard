@@ -11,6 +11,7 @@ namespace Vita49_2
 {
 
 /**
+ * @class PacketHeaderCodec
  * @brief Utility class for parsing and serializing VITA 49.2 packet headers.
  *
  * Handles the common header fields present in all VITA 49.2 packet types,

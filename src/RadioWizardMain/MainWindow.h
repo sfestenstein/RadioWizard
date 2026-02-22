@@ -1,12 +1,11 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef MAINWINDOW_H_
+#define MAINWINDOW_H_
 
 // Project headers
 #include "SdrEngine.h"
 
 // Third-party headers
 #include <QMainWindow>
-
 
 QT_BEGIN_NAMESPACE
 
@@ -17,12 +16,28 @@ class MainWindow;
 
 QT_END_NAMESPACE
 
+/**
+ * @class MainWindow
+ * @brief Main application window for RadioWizard.
+ *
+ * Hosts the SDR engine controls, spectrum/waterfall display, and
+ * constellation diagram.
+ */
 class MainWindow : public QMainWindow
 {
    Q_OBJECT
 
 public:
+   /**
+    * @brief Construct the main window.
+    *
+    * @param parent Parent widget.
+    */
    MainWindow(QWidget* parent = nullptr);
+
+   /**
+    * @brief Destroy the main window.
+    */
    ~MainWindow() override;
 
 private slots:
@@ -42,19 +57,19 @@ private slots:
    void onBwCursorHalfWidthChanged(double halfWidthHz);
 
 private:
-   /// Register DataHandler listeners for spectrum and I/Q data.
+   // Register DataHandler listeners for spectrum and I/Q data.
    void connectDataHandlers();
 
-   /// Remove DataHandler listeners on shutdown.
+   // Remove DataHandler listeners on shutdown.
    void disconnectDataHandlers();
 
-   /// Switch constellation plot to use unfiltered IQ data.
+   // Switch constellation plot to use unfiltered IQ data.
    void switchToUnfilteredIq();
 
-   /// Switch constellation plot to use filtered IQ data.
+   // Switch constellation plot to use filtered IQ data.
    void switchToFilteredIq();
 
-   /// Map the sample-rate combo index to Hz.
+   // Map the sample-rate combo index to Hz.
    static uint32_t sampleRateFromIndex(int index);
 
    Ui::MainWindow* _ui;
@@ -66,7 +81,8 @@ private:
 
    // Cached bandwidth cursor state for channel filter configuration.
    double _bwCursorHalfWidthHz{100'000.0};
-   double _bwCursorLockedX{0.5};  // Stored cursor position when locked (fraction [0, 1]).
+   double _bwCursorLockedX{0.5};
+
 };
 
-#endif // MAINWINDOW_H
+#endif // MAINWINDOW_H_

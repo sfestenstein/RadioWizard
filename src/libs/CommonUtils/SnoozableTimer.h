@@ -1,65 +1,72 @@
-#ifndef SNOOZABLETIMER_H
-#define SNOOZABLETIMER_H
+#ifndef SNOOZABLETIMER_H_
+#define SNOOZABLETIMER_H_
 
-#include <functional>
+// System headers
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <thread>
 
 /**
  * @class SnoozableTimer
- * @brief This class will execute an std::function after a snooze period
- *        of milliseconds once it is started.  It's key feature is a 'snooze'
- *        method that will increase the time until execution.
+ * @brief Timer that executes a callback after a snooze period, with the
+ *        ability to extend (snooze) the deadline.
+ *
+ * Once started, the timer counts down for the configured snooze period.
+ * Calling snooze() resets the deadline to NOW + snoozePeriod.
  */
 class SnoozableTimer
 {
 public:
+   /**
+    * @brief Construct a SnoozableTimer.
+    *
+    * @param function       Callback to invoke when the timer expires.
+    * @param snoozePeriodMs Initial snooze period in milliseconds.
+    */
+   SnoozableTimer(std::function<void()> function, int snoozePeriodMs);
 
-    /**
-     * @brief Constructor
-     * @param func
-     * @param anTimeoutMs
-     */
-    SnoozableTimer(std::function<void()> ahFunciont, int anSnoozePeriodMs );
+   /**
+    * @brief Destroy the timer, stopping it if running.
+    */
+   ~SnoozableTimer();
 
-    /**
-     * @brief Destructor
-     */
-    ~SnoozableTimer();
+   // Non-copyable.
+   SnoozableTimer(const SnoozableTimer&) = delete;
+   SnoozableTimer& operator=(const SnoozableTimer&) = delete;
 
-    /**
-     * @brief Starts the timer
-     */
-    void start();
+   /**
+    * @brief Start the timer.
+    */
+   void start();
 
-    /**
-     * @brief Stopps the timer
-     */
-    void stop();
+   /**
+    * @brief Stop the timer.
+    */
+   void stop();
 
-    /**
-     * @brief noozes until NOW plus the snooze time
-     */
-    void snooze();
+   /**
+    * @brief Reset the deadline to NOW + snoozePeriod.
+    */
+   void snooze();
 
-    /**
-     * @brief Updatest he value of the snooze period.
-     *       !!! Will execute a snooze of the new duration !!!
-     * @param anSnoozePeriodMs
-     */
-    void updateSnoozePeriod(int anSnoozePeriodMs);
+   /**
+    * @brief Update the snooze period and immediately snooze with the new
+    *        duration.
+    *
+    * @param snoozePeriodMs New snooze period in milliseconds.
+    */
+   void updateSnoozePeriod(int snoozePeriodMs);
 
 private:
-    std::function<void()> _function;
-    std::chrono::high_resolution_clock::time_point _executionTime;
-    mutable std::mutex _mutex;
-    std::condition_variable _cv;
-    std::thread _thread;
-    int _snoozePeriodMs;
-    bool _isRunning = false;
+   std::function<void()> _function;
+   std::chrono::high_resolution_clock::time_point _executionTime;
+   mutable std::mutex _mutex;
+   std::condition_variable _cv;
+   std::thread _thread;
+   int _snoozePeriodMs;
+   bool _isRunning = false;
 };
 
-
-#endif // SNOOZABLETIMER_H
+#endif // SNOOZABLETIMER_H_

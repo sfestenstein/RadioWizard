@@ -11,8 +11,11 @@
 namespace RealTimeGraphs
 {
 
-/// Internal widget that paints only the gradient strip and tick labels.
-/// Not intended for direct use — embedded inside `ColorBarWidget`.
+/**
+ * @class ColorBarStrip
+ * @brief Internal widget that paints only the gradient strip and tick labels.
+ * Not intended for direct use — embedded inside `ColorBarWidget`.
+ */
 class ColorBarStrip : public QWidget
 {
    Q_OBJECT
@@ -42,14 +45,17 @@ private:
    static constexpr int V_PADDING   = 2;
 };
 
-/// Standalone vertical color-bar legend widget with interactive dB controls.
-///
-/// Displays a gradient strip mapped through the active `ColorMap` with
-/// dB tick labels and spin boxes to adjust the min/max dB range.
-/// Emits `dbRangeChanged()` when the user adjusts either spin box.
-///
-/// Designed to be placed beside a spectrum or waterfall widget using
-/// a `QHBoxLayout`.
+/**
+ * @class ColorBarWidget
+ * @brief Standalone vertical color-bar legend widget with interactive dB controls.
+ *
+ * Displays a gradient strip mapped through the active `ColorMap` with
+ * dB tick labels and spin boxes to adjust the min/max dB range.
+ * Emits `dbRangeChanged()` when the user adjusts either spin box.
+ *
+ * Designed to be placed beside a spectrum or waterfall widget using
+ * a `QHBoxLayout`.
+ */
 class ColorBarWidget : public QWidget
 {
    Q_OBJECT
@@ -57,21 +63,21 @@ class ColorBarWidget : public QWidget
 public:
    explicit ColorBarWidget(QWidget* parent = nullptr);
 
-   /// Set the dB display range (also updates the spin boxes).
+   /** @brief Set the dB display range (also updates the spin boxes). */
    void setDbRange(float minDb, float maxDb);
 
-   /// Change the color palette.
+   /** @brief Change the color palette. */
    void setColorMap(ColorMap::Palette palette);
 
-   /// Set number of labelled tick marks on the gradient strip.
+   /** @brief Set number of labelled tick marks on the gradient strip. */
    void setTickCount(int count);
 
-   /// Preferred size — narrow vertical strip with controls.
+   /** @brief Preferred size — narrow vertical strip with controls. */
    [[nodiscard]] QSize sizeHint() const override;
    [[nodiscard]] QSize minimumSizeHint() const override;
 
 signals:
-   /// Emitted when the user changes either spin box.
+   /** @brief Emitted when the user changes either spin box. */
    void dbRangeChanged(float minDb, float maxDb);
 
 private:

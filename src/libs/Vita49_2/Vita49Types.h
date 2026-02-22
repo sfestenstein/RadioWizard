@@ -14,7 +14,7 @@ namespace Vita49_2
 // Enumerations
 // ============================================================================
 
-/// VITA 49.2 packet types
+/** @brief VITA 49.2 packet types */
 enum class PacketType : uint8_t
 {
    IFDataWithoutStreamId  = 0x0,
@@ -25,7 +25,7 @@ enum class PacketType : uint8_t
    ExtContext              = 0x5
 };
 
-/// Integer timestamp type (TSI field, header bits 23-22)
+/** @brief Integer timestamp type (TSI field, header bits 23-22) */
 enum class TSI : uint8_t
 {
    None  = 0x0,
@@ -34,7 +34,7 @@ enum class TSI : uint8_t
    Other = 0x3
 };
 
-/// Fractional timestamp type (TSF field, header bits 21-20)
+/** @brief Fractional timestamp type (TSF field, header bits 21-20) */
 enum class TSF : uint8_t
 {
    None        = 0x0,
@@ -43,7 +43,7 @@ enum class TSF : uint8_t
    FreeRunning = 0x3
 };
 
-/// Byte order for packet serialization/deserialization
+/** @brief Byte order for packet serialization/deserialization */
 enum class ByteOrder : uint8_t
 {
    BigEndian,      ///< Standard VITA 49 byte order
@@ -55,6 +55,7 @@ enum class ByteOrder : uint8_t
 // ============================================================================
 
 /**
+ * @class PacketHeader
  * @brief Parsed VITA 49.2 packet header.
  *
  * Represents the common header fields present in all VITA 49.2 packets.
@@ -88,6 +89,7 @@ struct PacketHeader
 };
 
 /**
+ * @class ContextFields
  * @brief Context fields for VITA 49.2 Context packets.
  *
  * Fields are identified by the Context Indicator Field (CIF0).
@@ -113,36 +115,36 @@ struct ContextFields
 // I/Q Sample Types
 // ============================================================================
 
-/// Single I/Q sample as complex float
+/** @brief Single I/Q sample as complex float */
 using IQSample = std::complex<float>;
 
-/// Vector of I/Q samples
+/** @brief Vector of I/Q samples */
 using IQSamples = std::vector<IQSample>;
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-/// Default scale factor for 16-bit to float conversion (full-scale = ±1.0)
+/** @brief Default scale factor for 16-bit to float conversion (full-scale = ±1.0) */
 constexpr float DEFAULT_SCALE_FACTOR = 32768.0f;
 
-/// Maximum VITA 49 packet size in 32-bit words
+/** @brief Maximum VITA 49 packet size in 32-bit words */
 constexpr uint16_t MAX_PACKET_SIZE_WORDS = 65535;
 
-/// Maximum VITA 49 packet size in bytes
+/** @brief Maximum VITA 49 packet size in bytes */
 constexpr size_t MAX_PACKET_SIZE_BYTES = static_cast<size_t>(MAX_PACKET_SIZE_WORDS) * 4;
 
-/// Radix point for 64-bit frequency/rate fields (20 fractional bits)
+/** @brief Radix point for 64-bit frequency/rate fields (20 fractional bits) */
 constexpr double FREQ_RADIX = 1048576.0;   // 2^20
 
-/// Radix point for 16-bit gain/level fields (7 fractional bits)
+/** @brief Radix point for 16-bit gain/level fields (7 fractional bits) */
 constexpr double GAIN_RADIX = 128.0;       // 2^7
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
-/// Check if a packet type includes a Stream ID
+/** @brief Check if a packet type includes a Stream ID */
 [[nodiscard]] inline bool hasStreamId(PacketType type)
 {
    switch (type)
@@ -157,7 +159,7 @@ constexpr double GAIN_RADIX = 128.0;       // 2^7
    }
 }
 
-/// Check if a packet type is a data packet (signal data)
+/** @brief Check if a packet type is a data packet (signal data) */
 [[nodiscard]] inline bool isDataPacket(PacketType type)
 {
    return type == PacketType::IFDataWithoutStreamId ||
@@ -166,7 +168,7 @@ constexpr double GAIN_RADIX = 128.0;       // 2^7
           type == PacketType::ExtDataWithStreamId;
 }
 
-/// Check if a packet type is a context packet
+/** @brief Check if a packet type is a context packet */
 [[nodiscard]] inline bool isContextPacket(PacketType type)
 {
    return type == PacketType::IFContext ||

@@ -7,7 +7,7 @@
 namespace RealTimeGraphs
 {
 
-/// Convert a frequency in Hz to a human-readable string (Hz/kHz/MHz/GHz).
+/** @brief Convert a frequency in Hz to a human-readable string (Hz/kHz/MHz/GHz). */
 [[nodiscard]] std::string formatFrequency(double freqHz);
 
 } // namespace RealTimeGraphs

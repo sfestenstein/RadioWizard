@@ -17,8 +17,9 @@
 struct FragmentHeader;
 
 /**
+ * @class PartialMessage
  * @brief Structure to hold partially reassembled messages.
- * 
+ *
  * Used internally to buffer incoming fragments until a complete
  * message can be reconstructed and delivered.
  */
@@ -32,8 +33,9 @@ struct PartialMessage
 };
 
 /**
+ * @class HighBandwidthSubscriber
  * @brief High-bandwidth subscriber using raw UDP multicast.
- * 
+ *
  * This class provides fast message reception optimized for high-bandwidth,
  * high-frequency data. It uses raw UDP multicast sockets and handles
  * automatic reassembly of fragmented messages.

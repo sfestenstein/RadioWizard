@@ -10,15 +10,20 @@
 namespace CommonUtils
 {
 
-/// Thread-unsafe, fixed-capacity circular buffer for time-series history.
-/// Stores the most recent `capacity` elements; older entries are silently
-/// overwritten.
+/**
+ * @class CircularBuffer
+ * @brief Thread-unsafe, fixed-capacity circular buffer for time-series history.
+ * Stores the most recent `capacity` elements; older entries are silently
+ * overwritten.
+ */
 template <typename T>
 class CircularBuffer
 {
 public:
-   /// Construct a buffer with the given maximum capacity.
-   /// @throws std::invalid_argument if capacity is zero.
+   /**
+    * @brief Construct a buffer with the given maximum capacity.
+    * @throws std::invalid_argument if capacity is zero.
+    */
    explicit CircularBuffer(std::size_t capacity)
       : _data(capacity)
       , _capacity{capacity}
@@ -29,7 +34,7 @@ public:
       }
    }
 
-   /// Push a single element, overwriting the oldest if full.
+   /** @brief Push a single element, overwriting the oldest if full. */
    void push(const T& value)
    {
       _data[_head] = value;
@@ -40,7 +45,7 @@ public:
       }
    }
 
-   /// Push a range of elements.
+   /** @brief Push a range of elements. */
    void push(const T* data, std::size_t count)
    {
       for (std::size_t i = 0; i < count; ++i)
@@ -49,19 +54,19 @@ public:
       }
    }
 
-   /// Push a vector of elements.
+   /** @brief Push a vector of elements. */
    void push(const std::vector<T>& values)
    {
       push(values.data(), values.size());
    }
 
-   /// Access element by logical index (0 = oldest).
+   /** @brief Access element by logical index (0 = oldest). */
    [[nodiscard]] const T& operator[](std::size_t index) const
    {
       return _data[physicalIndex(index)];
    }
 
-   /// Access element by logical index with bounds checking.
+   /** @brief Access element by logical index with bounds checking. */
    [[nodiscard]] const T& at(std::size_t index) const
    {
       if (index >= _size)
@@ -71,7 +76,7 @@ public:
       return _data[physicalIndex(index)];
    }
 
-   /// Return the most recently pushed element.
+   /** @brief Return the most recently pushed element. */
    [[nodiscard]] const T& back() const
    {
       if (_size == 0)
@@ -81,7 +86,7 @@ public:
       return _data[(_head + _capacity - 1) % _capacity];
    }
 
-   /// Copy all stored elements in chronological order into a vector.
+   /** @brief Copy all stored elements in chronological order into a vector. */
    [[nodiscard]] std::vector<T> toVector() const
    {
       std::vector<T> result;
@@ -93,19 +98,19 @@ public:
       return result;
    }
 
-   /// Number of elements currently stored.
+   /** @brief Number of elements currently stored. */
    [[nodiscard]] std::size_t size() const { return _size; }
 
-   /// Maximum number of elements the buffer can hold.
+   /** @brief Maximum number of elements the buffer can hold. */
    [[nodiscard]] std::size_t capacity() const { return _capacity; }
 
-   /// True if the buffer has been filled at least once.
+   /** @brief True if the buffer has been filled at least once. */
    [[nodiscard]] bool full() const { return _size == _capacity; }
 
-   /// True if no elements have been stored.
+   /** @brief True if no elements have been stored. */
    [[nodiscard]] bool empty() const { return _size == 0; }
 
-   /// Remove all elements without changing capacity.
+   /** @brief Remove all elements without changing capacity. */
    void clear()
    {
       _head = 0;

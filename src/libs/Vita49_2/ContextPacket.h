@@ -12,6 +12,7 @@ namespace Vita49_2
 {
 
 /**
+ * @class ContextPacket
  * @brief Encodes and decodes VITA 49.2 IF Context packets.
  *
  * Context packets carry metadata about the signal data stream,

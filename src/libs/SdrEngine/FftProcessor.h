@@ -16,17 +16,24 @@ struct fftwf_plan_s;
 namespace SdrEngine
 {
 
-/// Performs windowed FFT on complex I/Q data and produces a magnitude
-/// spectrum in dB.  Uses FFTW for the heavy lifting.
-///
-   /// Thread-safety: all public methods are protected by an internal mutex,
-/// so setFftSize / setWindowFunction can be called from the GUI thread
-/// while process() runs on the SdrEngine processing thread.
+/**
+ * @class FftProcessor
+ * @brief Performs windowed FFT on complex I/Q data and produces a magnitude
+ * spectrum in dB.  Uses FFTW for the heavy lifting.
+ *
+ * Thread-safety: all public methods are protected by an internal mutex,
+ * so setFftSize / setWindowFunction can be called from the GUI thread
+ * while process() runs on the SdrEngine processing thread.
+ */
 class FftProcessor
 {
 public:
-   /// @param fftSize      Number of FFT bins (must be power of two).
-   /// @param windowFunc   Windowing function to apply before the FFT.
+   /**
+    * @brief Construct an FftProcessor with the given FFT size and window.
+    *
+    * @param fftSize      Number of FFT bins (must be power of two).
+    * @param windowFunc   Windowing function to apply before the FFT.
+    */
    explicit FftProcessor(size_t fftSize = 2048,
                          WindowFunction windowFunc = WindowFunction::BlackmanHarris);
 
@@ -40,38 +47,46 @@ public:
    FftProcessor(FftProcessor&& other) noexcept;
    FftProcessor& operator=(FftProcessor&& other) noexcept;
 
-   /// Change the FFT size.  Rebuilds internal FFTW plan.
+   /** @brief Change the FFT size.  Rebuilds internal FFTW plan. */
    void setFftSize(size_t fftSize);
 
-   /// @return The current FFT size.
+   /**
+    * @brief Get the current FFT size.
+    * @return The current FFT size.
+    */
    [[nodiscard]] size_t getFftSize() const;
 
-   /// Change the windowing function.
+   /** @brief Change the windowing function. */
    void setWindowFunction(WindowFunction windowFunc);
 
-   /// @return The current windowing function.
+   /**
+    * @brief Get the current windowing function.
+    * @return The current windowing function.
+    */
    [[nodiscard]] WindowFunction getWindowFunction() const;
 
-   /// Compute the magnitude spectrum from a block of I/Q samples.
-   ///
-   /// If `samples` has fewer elements than the FFT size the remainder is
-   /// zero-padded.  If it has more, only the first `fftSize` samples are
-   /// used.
-   ///
-   /// @param samples  Complex float I/Q data.
-   /// @return Magnitude spectrum in dB, length == fftSize, DC-centred
-   ///         (negative frequencies on the left).
+   /**
+    * @brief Compute the magnitude spectrum from a block of I/Q samples.
+    *
+    * If `samples` has fewer elements than the FFT size the remainder is
+    * zero-padded.  If it has more, only the first `fftSize` samples are
+    * used.
+    *
+    * @param samples  Complex float I/Q data.
+    * @return Magnitude spectrum in dB, length == fftSize, DC-centred
+    *         (negative frequencies on the left).
+    */
    [[nodiscard]] std::vector<float> process(
       const std::vector<std::complex<float>>& samples) const;
 
 private:
-   /// (Re-)create the FFTW plan and window coefficients.
+   // (Re-)create the FFTW plan and window coefficients.
    void rebuild();
 
-   /// Destroy the current FFTW plan and free aligned buffers.
+   // Destroy the current FFTW plan and free aligned buffers.
    void destroy();
 
-   /// Populate _window with the selected function.
+   // Populate _window with the selected function.
    void buildWindow();
 
    mutable std::mutex _mutex;  ///< Guards all FFTW resources and window.

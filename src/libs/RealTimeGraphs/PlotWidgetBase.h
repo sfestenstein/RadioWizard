@@ -13,12 +13,15 @@
 namespace RealTimeGraphs
 {
 
-/// Abstract base class for frequency-domain plot widgets.
-///
-/// Centralises the cursor overlay, bandwidth selector, and the shared
-/// mouse-interaction logic that is common to SpectrumWidget and
-/// WaterfallWidget.  Subclasses implement `plotArea()` and provide
-/// their own painting, zooming, and panning.
+/**
+ * @class PlotWidgetBase
+ * @brief Abstract base class for frequency-domain plot widgets.
+ *
+ * Centralises the cursor overlay, bandwidth selector, and the shared
+ * mouse-interaction logic that is common to SpectrumWidget and
+ * WaterfallWidget.  Subclasses implement `plotArea()` and provide
+ * their own painting, zooming, and panning.
+ */
 class PlotWidgetBase : public QWidget
 {
    Q_OBJECT
@@ -26,115 +29,133 @@ class PlotWidgetBase : public QWidget
 public:
    explicit PlotWidgetBase(QWidget* parent = nullptr);
 
-   /// Set the frequency range so the x-axis shows real frequencies.
-   /// @param centerFreqHz  Centre frequency in Hz.
-   /// @param bandwidthHz   Total bandwidth in Hz.
+   /**
+    * @brief Set the frequency range so the x-axis shows real frequencies.
+    * @param centerFreqHz  Centre frequency in Hz.
+    * @param bandwidthHz   Total bandwidth in Hz.
+    */
    void setFrequencyRange(double centerFreqHz, double bandwidthHz);
 
-   /// Minimum size hint for layout.
+   /** @brief Minimum size hint for layout. */
    [[nodiscard]] QSize minimumSizeHint() const override;
 
 public slots:
-   /// Set the visible X range (as fraction of total bin range [0, 1]).
-   /// Used for linked-axis synchronisation — does not re-emit xViewChanged.
+   /**
+    * @brief Set the visible X range (as fraction of total bin range [0, 1]).
+    * Used for linked-axis synchronisation — does not re-emit xViewChanged.
+    */
    void setXViewRange(double xStart, double xEnd);
 
-   /// Show a linked vertical cursor line from another widget.
+   /** @brief Show a linked vertical cursor line from another widget. */
    void setLinkedCursorX(double xData);
 
-   /// Hide the linked vertical cursor line.
+   /** @brief Hide the linked vertical cursor line. */
    void clearLinkedCursorX();
 
-   /// Show linked measurement-cursor vertical lines from another widget.
+   /** @brief Show linked measurement-cursor vertical lines from another widget. */
    void setLinkedMeasCursors(double x1Valid, double x1,
                              double x2Valid, double x2);
 
-   /// Clear local measurement cursors (called by linked peer).
+   /** @brief Clear local measurement cursors (called by linked peer). */
    void clearMeasCursors();
 
-   /// Enable or disable bandwidth cursor mode.
+   /** @brief Enable or disable bandwidth cursor mode. */
    void setBandwidthCursorEnabled(bool enabled);
 
-   /// Set the bandwidth cursor half-width in Hz (for sync from peer widget).
+   /** @brief Set the bandwidth cursor half-width in Hz (for sync from peer widget). */
    void setBandwidthCursorHalfWidthHz(double hz);
 
-   /// Lock bandwidth cursor at a specific data-space X value (from peer).
+   /** @brief Lock bandwidth cursor at a specific data-space X value (from peer). */
    void lockBandwidthCursorAt(double xData);
 
-   /// Unlock bandwidth cursor (from peer).
+   /** @brief Unlock bandwidth cursor (from peer). */
    void unlockBandwidthCursor();
 
 signals:
-   /// Emitted when the user zooms or pans the X axis.
+   /** @brief Emitted when the user zooms or pans the X axis. */
    void xViewChanged(double xStart, double xEnd);
 
-   /// Emitted when the tracking crosshair X position changes.
+   /** @brief Emitted when the tracking crosshair X position changes. */
    void trackingCursorXChanged(double xData);
 
-   /// Emitted when the tracking crosshair leaves the plot.
+   /** @brief Emitted when the tracking crosshair leaves the plot. */
    void trackingCursorLeft();
 
-   /// Emitted when measurement cursors change.
-   /// Valid flags are 1.0 if present, 0.0 if absent.
+   /**
+    * @brief Emitted when measurement cursors change.
+    * Valid flags are 1.0 if present, 0.0 if absent.
+    */
    void measCursorsChanged(double x1Valid, double x1,
                            double x2Valid, double x2);
 
-   /// Emitted when the peer widget should clear its measurement cursors.
+   /** @brief Emitted when the peer widget should clear its measurement cursors. */
    void requestPeerCursorClear();
 
-   /// Emitted when the bandwidth cursor half-width changes (via mouse wheel).
+   /** @brief Emitted when the bandwidth cursor half-width changes (via mouse wheel). */
    void bandwidthCursorHalfWidthChanged(double halfWidthHz);
 
-   /// Emitted when the bandwidth cursor is locked by a click.
+   /** @brief Emitted when the bandwidth cursor is locked by a click. */
    void bandwidthCursorLocked(double xData);
 
-   /// Emitted when the bandwidth cursor is unlocked.
+   /** @brief Emitted when the bandwidth cursor is unlocked. */
    void bandwidthCursorUnlocked();
 
 protected:
-   /// Compute the plot area rectangle.  Subclasses must implement this.
+   /** @brief Compute the plot area rectangle.  Subclasses must implement this. */
    [[nodiscard]] virtual QRect plotArea() const = 0;
 
-   /// Virtual hook called when the view X range changes.
-   /// Override to perform additional synchronisation (e.g. color-bar update).
+   /**
+    * @brief Virtual hook called when the view X range changes.
+    * Override to perform additional synchronisation (e.g. color-bar update).
+    */
    virtual void onViewRangeChanged();
 
-   /// Emit the measCursorsChanged signal with current overlay state.
+   /** @brief Emit the measCursorsChanged signal with current overlay state. */
    void emitMeasCursorsChanged();
 
-   /// Format the X-axis value at a given data fraction.
+   /** @brief Format the X-axis value at a given data fraction. */
    [[nodiscard]] QString formatXValue(double dataFrac) const;
 
-   /// Format the delta between two X data values.
+   /** @brief Format the delta between two X data values. */
    [[nodiscard]] QString formatDeltaXValue(double x1, double x2) const;
 
-   /// Push the current BandwidthSelector half-width to the overlay.
+   /** @brief Push the current BandwidthSelector half-width to the overlay. */
    void syncBandwidthOverlay();
 
    // ----- Event-handling helpers for subclasses -----
 
-   /// Process cursor tracking on mouse move (non-panning case).
-   /// Returns true if a repaint was scheduled.
+   /**
+    * @brief Process cursor tracking on mouse move (non-panning case).
+    * Returns true if a repaint was scheduled.
+    */
    bool processCursorMove(const QPoint& pos);
 
-   /// Process leave event for cursor tracking.
+   /** @brief Process leave event for cursor tracking. */
    void processLeaveEvent(QEvent* event);
 
-   /// Process bandwidth-cursor wheel adjustment.
-   /// Returns true if the event was consumed (caller should accept).
+   /**
+    * @brief Process bandwidth-cursor wheel adjustment.
+    * Returns true if the event was consumed (caller should accept).
+    */
    bool processBandwidthWheel(int angleDelta);
 
-   /// Process bandwidth-cursor click (set/update locked position).
-   /// Returns true if the event was consumed.
+   /**
+    * @brief Process bandwidth-cursor click (set/update locked position).
+    * Returns true if the event was consumed.
+    */
    bool processBandwidthClick(const QPoint& pos);
 
-   /// Process middle-button press (clear cursors + BW unlock).
-   /// Returns true (always consumes).
+   /**
+    * @brief Process middle-button press (clear cursors + BW unlock).
+    * Returns true (always consumes).
+    */
    bool processMiddleButtonPress();
 
-   /// Process measurement-cursor placement on double-click.
-   /// Handles left (cursor 1) and right (cursor 2) buttons.
-   /// Returns true if the event was consumed.
+   /**
+    * @brief Process measurement-cursor placement on double-click.
+    * Handles left (cursor 1) and right (cursor 2) buttons.
+    * Returns true if the event was consumed.
+    */
    bool processMeasCursorDoubleClick(QMouseEvent* event);
 
    // ----- Shared state -----

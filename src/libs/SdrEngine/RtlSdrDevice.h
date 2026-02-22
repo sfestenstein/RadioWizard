@@ -15,10 +15,13 @@
 namespace SdrEngine
 {
 
-/// RTL-SDR device implementation using librtlsdr.
-///
-/// Wraps the librtlsdr C API behind the ISdrDevice interface.
-/// Async streaming runs in a dedicated thread via `rtlsdr_read_async`.
+/**
+ * @class RtlSdrDevice
+ * @brief RTL-SDR device implementation using librtlsdr.
+ *
+ * Wraps the librtlsdr C API behind the ISdrDevice interface.
+ * Async streaming runs in a dedicated thread via `rtlsdr_read_async`.
+ */
 class RtlSdrDevice : public ISdrDevice
 {
 public:
@@ -51,10 +54,10 @@ public:
    [[nodiscard]] std::vector<DeviceInfo> enumerateDevices() const override;
 
 private:
-   /// librtlsdr callback trampoline (static → member).
+   // librtlsdr callback trampoline (static → member).
    static void rtlsdrCallback(unsigned char* buf, uint32_t len, void* ctx);
 
-   /// Thread body that runs rtlsdr_read_async.
+   // Thread body that runs rtlsdr_read_async.
    void asyncReadThread(std::size_t bufferSize);
 
    void* _device{nullptr};   ///< Opaque rtlsdr_dev_t* (avoids exposing rtl-sdr.h)
