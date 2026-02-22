@@ -44,18 +44,25 @@ conan profile detect --force
 Install both Debug and Release configurations to a unified build folder:
 
 ```bash
-conan install . --output-folder=build --build=missing -s build_type=Release -s compiler.cppstd=20
+conan install . --output-folder=build --build=missing -s build_type=Release -s compiler.cppstd=gnu20
 ```
 
 > **Note:** The first build can take 20–60+ minutes as Conan builds Qt 6 and its
 > transitive dependencies (OpenGL, Freetype, Harfbuzz, etc.) from source.
 > Subsequent builds use the Conan binary cache.
 
+> **Important:** Use `gnu20` (not `20`) for `compiler.cppstd` — Qt 6 requires GNU
+> extensions such as `__int128` that are disabled in strict ISO C++20 mode.
+
 If `conan install` fails while building `libsystemd/255` with an error about
 "Unknown filesystems defined in kernel headers" (for example `BCACHEFS_SUPER_MAGIC`),
 this is typically a mismatch between newer Linux kernel headers and the base `255` recipe.
 This project works around it by overriding to a newer `libsystemd/255.x` patch release
 in `conanfile.py`.
+
+If `conan install` fails while building `openal-soft` with GCC 15 (typed-enum
+parse errors in `alc/alu.h`), the project disables OpenAL in Qt via
+`with_openal = False` in `conanfile.py` since RadioWizard does not use OpenAL.
 
 This installs all dependencies for all presets (debug, release, coverage, ci-linux).
 

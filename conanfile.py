@@ -57,6 +57,8 @@ class RadioWizardConan(ConanFile):
       if self.settings.os in ["Linux", "FreeBSD"]:
          self.requires("libsystemd/255.10", override=True)
 
+
+
       # FFT
       self.requires("fftw/3.3.10")
 
@@ -90,6 +92,11 @@ class RadioWizardConan(ConanFile):
       self.options["qt/*"].with_pq = False       # No PostgreSQL SQL driver
       self.options["qt/*"].with_odbc = False      # No ODBC SQL driver
       self.options["qt/*"].with_sqlite3 = False   # No SQLite SQL driver
+
+      # openal-soft (all available versions through 1.23.1) fails to build with
+      # GCC 15 due to a typed-enum parse error in alc/alu.h.  RadioWizard does
+      # not use OpenAL directly, so disable it in Qt to avoid the broken dep.
+      self.options["qt/*"].with_openal = False
 
    def layout(self):
       # Use standard CMake layout
