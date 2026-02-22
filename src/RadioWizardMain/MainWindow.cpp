@@ -1,5 +1,7 @@
 // Project headers
 #include "MainWindow.h"
+#include "AudioOutput.h"
+#include "Demodulator.h"
 #include "GeneralLogger.h"
 #include "RtlSdrDevice.h"
 
@@ -131,6 +133,10 @@ MainWindow::MainWindow(QWidget* parent)
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setMaxHoldEnabled);
    connect(_ui->_bwCursorButton, &QPushButton::toggled,
            this, &MainWindow::onBwCursorToggled);
+   connect(_ui->_demodButton, &QPushButton::toggled,
+           this, &MainWindow::onDemodToggled);
+   connect(_ui->_demodModeCombo, &QComboBox::currentIndexChanged,
+           this, &MainWindow::onDemodModeChanged);
    connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::requestPeerCursorClear,
            _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::clearMeasCursors);
    connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::requestPeerCursorClear,
@@ -198,6 +204,7 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow()
 {
+   stopDemod();
    disconnectDataHandlers();
    if (_engine.isRunning())
    {
@@ -228,6 +235,14 @@ void MainWindow::onStartStopToggled(bool checked)
    else
    {
       _engine.stop();
+
+      // Stop demod if active.
+      if (_ui->_demodButton->isChecked())
+      {
+         _ui->_demodButton->setChecked(false);
+      }
+      stopDemod();
+
       disconnectDataHandlers();
       _ui->_startStopButton->setText("Start");
    }
@@ -342,6 +357,15 @@ void MainWindow::onBwCursorToggled(bool checked)
    // Disable channel filter when BW cursor is turned off.
    if (!checked)
    {
+      // Stop demod if active.
+      if (_ui->_demodButton->isChecked())
+      {
+         _ui->_demodButton->setChecked(false);
+      }
+      stopDemod();
+      _bwCursorLocked = false;
+      updateDemodButtonState();
+
       _engine.setChannelFilterEnabled(false);
       switchToUnfilteredIq();
    }
@@ -352,6 +376,7 @@ void MainWindow::onBwCursorLocked(double xData)
    // xData is a fraction [0, 1] of the total bandwidth.
    // 0.5 = centre frequency.  Convert to Hz offset.
    _bwCursorLockedX = xData;  // Store for use when half-width changes.
+   _bwCursorLocked = true;
 
    const uint64_t centerFreqHz = _engine.getCenterFrequency();
    auto sampleRate = static_cast<double>(_engine.getSampleRate());
@@ -368,12 +393,29 @@ void MainWindow::onBwCursorLocked(double xData)
    
    // Switch constellation to display filtered IQ data.
    switchToFilteredIq();
+
+   updateDemodButtonState();
+
+   // If demod is active, reconfigure for new channel.
+   if (_ui->_demodButton->isChecked())
+   {
+      startDemod();
+   }
 }
 
 void MainWindow::onBwCursorUnlocked()
 {
+   _bwCursorLocked = false;
    _engine.setChannelFilterEnabled(false);
    
+   // Stop demod if active.
+   if (_ui->_demodButton->isChecked())
+   {
+      _ui->_demodButton->setChecked(false);
+   }
+   stopDemod();
+   updateDemodButtonState();
+
    // Switch constellation back to unfiltered IQ data.
    switchToUnfilteredIq();
 }
@@ -397,7 +439,151 @@ void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
       const double maxFreqHz = channelCenterHz + (bwHz / 2.0);
 
       _engine.configureChannelFilterFromMinMax(minFreqHz, maxFreqHz);
+
+      // Reconfigure demod if active (bandwidth changed).
+      if (_ui->_demodButton->isChecked())
+      {
+         startDemod();
+      }
    }
+}
+
+void MainWindow::onDemodToggled(bool checked)
+{
+   if (checked)
+   {
+      startDemod();
+   }
+   else
+   {
+      stopDemod();
+   }
+}
+
+void MainWindow::onDemodModeChanged(int /*index*/)
+{
+   // If demod is currently active, restart with the new mode.
+   if (_ui->_demodButton->isChecked())
+   {
+      startDemod();
+   }
+}
+
+// ============================================================================
+// Demodulation helpers
+// ============================================================================
+
+void MainWindow::startDemod()
+{
+   // Stop any existing demod session.
+   stopDemod();
+
+   // Ensure the channel filter is configured and enabled.
+   if (!_engine.isChannelFilterEnabled())
+   {
+      GPWARN("Demod: channel filter not active — lock a BW cursor first");
+      _ui->_demodButton->setChecked(false);
+      return;
+   }
+
+   // Configure Demodulator with the channel filter output rate.
+   const double channelRate = _engine.channelFilter().getOutputSampleRate();
+   if (channelRate <= 0.0)
+   {
+      GPWARN("Demod: channel filter output rate invalid");
+      _ui->_demodButton->setChecked(false);
+      return;
+   }
+
+   const auto mode = selectedDemodMode();
+   constexpr double AUDIO_RATE = SdrEngine::Demodulator::DEFAULT_AUDIO_RATE;
+   _demod.configure(mode, channelRate, AUDIO_RATE);
+
+   // Create and start stereo audio output.
+   _audioOutput = std::make_unique<AudioOutput>(AUDIO_RATE, 2);
+   if (!_audioOutput->start())
+   {
+      GPERROR("Demod: failed to start audio output");
+      _audioOutput.reset();
+      _ui->_demodButton->setChecked(false);
+      return;
+   }
+
+   // Register a listener on the filtered IQ data handler to feed the demod.
+   _demodListenerId = _engine.filteredIqDataHandler().registerListener(
+      [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
+      {
+         try
+         {
+            auto audio = _demod.demodulate(iqData->samples);
+            if (audio.left.empty() || !_audioOutput ||
+                !_audioOutput->isPlaying())
+            {
+               return;
+            }
+
+            // Interleave L and R into a single buffer.
+            const size_t frames = std::min(audio.left.size(),
+                                           audio.right.size());
+            std::vector<float> interleaved(frames * 2);
+            for (size_t i = 0; i < frames; ++i)
+            {
+               interleaved[i * 2] = audio.left[i];
+               interleaved[i * 2 + 1] = audio.right[i];
+            }
+            _audioOutput->pushSamples(interleaved);
+         }
+         catch (std::exception& ex)
+         {
+            GPERROR("Demod exception: {}", ex.what());
+         }
+      });
+
+   GPINFO("Demod started: mode={}, channel={:.0f} Hz → audio={:.0f} Hz",
+          SdrEngine::demodModeName(mode), channelRate, AUDIO_RATE);
+}
+
+void MainWindow::stopDemod()
+{
+   // Unregister the filtered IQ listener for demod.
+   if (_demodListenerId >= 0)
+   {
+      _engine.filteredIqDataHandler().unregisterListener(_demodListenerId);
+      _demodListenerId = -1;
+   }
+
+   // Stop and destroy audio output.
+   if (_audioOutput)
+   {
+      _audioOutput->stop();
+      _audioOutput.reset();
+   }
+
+   _demod.reset();
+}
+
+void MainWindow::updateDemodButtonState()
+{
+   // Demod is only available when a bandwidth cursor is locked.
+   _ui->_demodButton->setEnabled(_bwCursorLocked);
+   _ui->_demodModeCombo->setEnabled(_bwCursorLocked);
+}
+
+SdrEngine::DemodMode MainWindow::selectedDemodMode() const
+{
+   // Combo order: FM Mono (0), FM Stereo (1), AM (2).
+   static constexpr std::array<SdrEngine::DemodMode, 3> MODES =
+   {
+      SdrEngine::DemodMode::FmMono,
+      SdrEngine::DemodMode::FmStereo,
+      SdrEngine::DemodMode::AM,
+   };
+   const int idx = _ui->_demodModeCombo->currentIndex();
+   if (idx >= 0 && idx < static_cast<int>(MODES.size()))
+   {
+      return MODES[static_cast<size_t>(idx)];
+   }
+   return SdrEngine::DemodMode::FmMono;
 }
 
 // ============================================================================

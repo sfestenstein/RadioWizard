@@ -17,6 +17,8 @@ set(PROJECT_SOURCES
         MainWindow.cpp
         MainWindow.h
         MainWindow.ui
+        AudioOutput.cpp
+        AudioOutput.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -43,6 +45,12 @@ else()
 endif()
 
 target_link_libraries(RadioWizardMain PRIVATE Qt${QT_VERSION_MAJOR}::Widgets RealTimeGraphs CommonUtils SdrEngine)
+
+# Link macOS AudioToolbox framework for AudioOutput (AudioQueue).
+if(APPLE)
+   find_library(AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
+   target_link_libraries(RadioWizardMain PRIVATE ${AUDIOTOOLBOX_FRAMEWORK})
+endif()
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
