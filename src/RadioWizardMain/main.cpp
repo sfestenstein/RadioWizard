@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 
    const QApplication a(argc, argv);
 
-   // Apply a dark colour palette to the entire application.
+   // Apply a dark color palette to the entire application.
    QApplication::setStyle(QStyleFactory::create("Fusion"));
    QPalette darkPalette;
    darkPalette.setColor(QPalette::Window,           QColor(45, 45, 48));

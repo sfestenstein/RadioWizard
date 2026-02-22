@@ -87,7 +87,7 @@ void FrequencyInputWidget::paintEvent(QPaintEvent* /*event*/)
    QPainter painter(this);
    painter.setRenderHint(QPainter::Antialiasing);
 
-   // --- Colour palette ---
+   // --- Color palette ---
    const QColor bgTop(22, 24, 30);
    const QColor bgBottom(14, 15, 20);
    const QColor cellIdle(32, 34, 42);
