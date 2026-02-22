@@ -1,5 +1,5 @@
 // Project headers
-#include "MainWindow.h"
+#include <MainWindow.h>
 #include "AudioOutput.h"
 #include "Demodulator.h"
 #include "GeneralLogger.h"
@@ -11,7 +11,6 @@
 // Third-party headers
 #include <QCheckBox>
 #include <QComboBox>
-#include <QDoubleSpinBox>
 #include <QMetaObject>
 #include <QPushButton>
 #include <QSlider>
@@ -76,6 +75,8 @@ MainWindow::MainWindow(QWidget* parent)
    _engine.setSampleRate(2'400'000);
    _engine.setFftSize(65536);
 
+   _ui->_centerFreqSpinBox->setFrequencyMhz(92.1);
+
    // Default combo selections.
    _ui->_sampleRateCombo->setCurrentIndex(5);
    _ui->_fftSizeCombo->setCurrentIndex(5);
@@ -113,7 +114,7 @@ MainWindow::MainWindow(QWidget* parent)
            this, &MainWindow::onStartStopToggled);
    connect(_ui->_autoScaleBtn, &QPushButton::clicked,
            this, &MainWindow::onAutoScaleClicked);
-   connect(_ui->_centerFreqSpinBox, &QDoubleSpinBox::valueChanged,
+   connect(_ui->_centerFreqSpinBox, &FrequencyInputWidget::frequencyChanged,
            this, &MainWindow::onCenterFreqChanged);
    connect(_ui->_sampleRateCombo, &QComboBox::currentIndexChanged,
            this, &MainWindow::onSampleRateChanged);
@@ -141,7 +142,7 @@ MainWindow::MainWindow(QWidget* parent)
            _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::clearMeasCursors);
    connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::requestPeerCursorClear,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::clearMeasCursors);
-   onFftAverageChanged(33); 
+   onFftAverageChanged(33);
 
    // Bandwidth cursor synchronisation between Spectrum and Waterfall
    connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::bandwidthCursorHalfWidthChanged,
@@ -175,23 +176,23 @@ MainWindow::MainWindow(QWidget* parent)
    _ui->_spectrurmWidget->setXAxisVisible(false); // Waterfall below shows the shared X axis
 
    // Bidirectional X-axis linking
-   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::xViewChanged, 
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::xViewChanged,
            _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setXViewRange);
    connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::xViewChanged,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setXViewRange);
 
    // Bidirectional tracking-cursor linking (vertical line sync)
-   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorXChanged, 
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorXChanged,
            _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setLinkedCursorX);
    connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::trackingCursorLeft,
            _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::clearLinkedCursorX);
-   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorXChanged, 
+   connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorXChanged,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setLinkedCursorX);
    connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::trackingCursorLeft,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::clearLinkedCursorX);
 
    // Bidirectional measurement-cursor linking (vertical lines only)
-   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::measCursorsChanged, 
+   connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::measCursorsChanged,
            _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setLinkedMeasCursors);
    connect(_ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::measCursorsChanged,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setLinkedMeasCursors);
@@ -390,7 +391,7 @@ void MainWindow::onBwCursorLocked(double xData)
 
    _engine.configureChannelFilterFromMinMax(minFreqHz, maxFreqHz);
    _engine.setChannelFilterEnabled(true);
-   
+
    // Switch constellation to display filtered IQ data.
    switchToFilteredIq();
 
@@ -407,7 +408,7 @@ void MainWindow::onBwCursorUnlocked()
 {
    _bwCursorLocked = false;
    _engine.setChannelFilterEnabled(false);
-   
+
    // Stop demod if active.
    if (_ui->_demodButton->isChecked())
    {

@@ -131,13 +131,6 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="freqLabel">
-              <property name="text">
-               <string>Center Freq</string>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="0" colspan="2">
              <widget class="QPushButton" name="_startStopButton">
               <property name="text">
@@ -162,28 +155,6 @@
              <widget class="QLabel" name="fftAverageLabel">
               <property name="text">
                <string>FFT Averaging</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="_centerFreqSpinBox">
-              <property name="suffix">
-               <string> MHz</string>
-              </property>
-              <property name="decimals">
-               <number>3</number>
-              </property>
-              <property name="minimum">
-               <double>4.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>1766.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.100000000000000</double>
-              </property>
-              <property name="value">
-               <double>92.099999999999994</double>
               </property>
              </widget>
             </item>
@@ -274,14 +245,14 @@
             </item>
             <item row="17" column="0">
              <widget class="QPushButton" name="_demodButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Demod</string>
               </property>
               <property name="checkable">
                <bool>true</bool>
-              </property>
-              <property name="enabled">
-               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -366,6 +337,9 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="0" colspan="2">
+             <widget class="FrequencyInputWidget" name="_centerFreqSpinBox"/>
+            </item>
            </layout>
           </widget>
          </widget>
@@ -401,7 +375,7 @@
      <x>0</x>
      <y>0</y>
      <width>1400</width>
-     <height>23</height>
+     <height>33</height>
     </rect>
    </property>
   </widget>
@@ -424,6 +398,11 @@
    <extends>QWidget</extends>
    <header>ConstellationWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FrequencyInputWidget</class>
+   <extends>QWidget</extends>
+   <header>FrequencyInputWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
