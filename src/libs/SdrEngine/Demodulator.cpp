@@ -31,7 +31,7 @@ Demodulator::~Demodulator()
 void Demodulator::configure(DemodMode mode, double inputSampleRate,
                             double audioSampleRate)
 {
-   std::lock_guard lock(_mutex);
+   const std::lock_guard lock(_mutex);
 
    if (inputSampleRate <= 0.0 || audioSampleRate <= 0.0)
    {
@@ -66,13 +66,13 @@ void Demodulator::configure(DemodMode mode, double inputSampleRate,
 
 bool Demodulator::isConfigured() const
 {
-   std::lock_guard lock(_mutex);
+   const std::lock_guard lock(_mutex);
    return _configured;
 }
 
 DemodMode Demodulator::getMode() const
 {
-   std::lock_guard lock(_mutex);
+   const std::lock_guard lock(_mutex);
    return _mode;
 }
 
@@ -82,7 +82,7 @@ DemodMode Demodulator::getMode() const
 
 DemodAudio Demodulator::demodulate(const std::vector<IqSample>& iqSamples)
 {
-   std::lock_guard lock(_mutex);
+   const std::lock_guard lock(_mutex);
 
    if (!_configured || iqSamples.empty())
    {
@@ -160,20 +160,20 @@ DemodAudio Demodulator::demodulate(const std::vector<IqSample>& iqSamples)
          // De-emphasis on each channel.
          if (_deemphasisL != nullptr)
          {
-            for (size_t i = 0; i < leftBaseband.size(); ++i)
+            for (float & i : leftBaseband)
             {
                float out = 0.0F;
-               iirfilt_rrrf_execute(_deemphasisL, leftBaseband[i], &out);
-               leftBaseband[i] = out;
+               iirfilt_rrrf_execute(_deemphasisL, i, &out);
+               i = out;
             }
          }
          if (_deemphasisR != nullptr)
          {
-            for (size_t i = 0; i < rightBaseband.size(); ++i)
+            for (float & i : rightBaseband)
             {
                float out = 0.0F;
-               iirfilt_rrrf_execute(_deemphasisR, rightBaseband[i], &out);
-               rightBaseband[i] = out;
+               iirfilt_rrrf_execute(_deemphasisR, i, &out);
+               i = out;
             }
          }
 
@@ -183,11 +183,11 @@ DemodAudio Demodulator::demodulate(const std::vector<IqSample>& iqSamples)
          // For the right channel, use _resamplerR directly.
          if (_resamplerR != nullptr)
          {
-            const auto numR = static_cast<unsigned int>(rightBaseband.size());
-            const float ratio =
+            auto numR = static_cast<unsigned int>(rightBaseband.size());
+            auto ratio =
                static_cast<float>(_audioSampleRate / _inputSampleRate);
             const auto maxOut =
-               static_cast<size_t>(static_cast<float>(numR) * ratio + 64);
+               static_cast<size_t>((static_cast<float>(numR) * ratio) + 64);
             result.right.resize(maxOut);
             unsigned int numWritten = 0;
             msresamp_rrrf_execute(_resamplerR,
@@ -248,7 +248,7 @@ DemodAudio Demodulator::demodulate(const std::vector<IqSample>& iqSamples)
 
 double Demodulator::getAudioSampleRate() const
 {
-   std::lock_guard lock(_mutex);
+   const std::lock_guard lock(_mutex);
    return _audioSampleRate;
 }
 
@@ -258,7 +258,7 @@ double Demodulator::getAudioSampleRate() const
 
 void Demodulator::reset()
 {
-   std::lock_guard lock(_mutex);
+   const std::lock_guard lock(_mutex);
    if (_configured)
    {
       auto savedMode = _mode;
@@ -361,8 +361,7 @@ namespace
 /// Build a 1st-order IIR de-emphasis filter with time constant τ (seconds).
 iirfilt_rrrf_s* createDeemphasisFilter(double tau, double sampleRate)
 {
-   const float alpha =
-      static_cast<float>(std::exp(-1.0 / (tau * sampleRate)));
+   auto alpha = static_cast<float>(std::exp(-1.0 / (tau * sampleRate)));
    float b[2] = {1.0F - alpha, 0.0F};
    float a[2] = {1.0F, -alpha};
    return iirfilt_rrrf_create(b, 2, a, 2);
@@ -380,7 +379,7 @@ iirfilt_rrrf_s* createDcBlockFilter(float alpha = 0.999F)
 /// Build an msresamp_rrrf resampler, or nullptr if ratio ≈ 1.
 msresamp_rrrf_s* createResampler(double inRate, double outRate)
 {
-   const float ratio = static_cast<float>(outRate / inRate);
+   auto ratio = static_cast<float>(outRate / inRate);
    if (std::fabs(ratio - 1.0F) < 0.001F)
    {
       return nullptr;
@@ -394,7 +393,7 @@ msresamp_rrrf_s* createResampler(double inRate, double outRate)
 void Demodulator::createFmMonoObjects()
 {
    constexpr double FM_DEVIATION_HZ = 75000.0;
-   const float kf = static_cast<float>(FM_DEVIATION_HZ / _inputSampleRate);
+   auto kf = static_cast<float>(FM_DEVIATION_HZ / _inputSampleRate);
    _fmDemod = freqdem_create(kf);
 
    constexpr double TAU = 75.0e-6;
@@ -414,7 +413,7 @@ void Demodulator::createFmStereoObjects()
 {
    // FM demodulator — same as mono (gives composite MPX baseband).
    constexpr double FM_DEVIATION_HZ = 75000.0;
-   const float kf = static_cast<float>(FM_DEVIATION_HZ / _inputSampleRate);
+   auto kf = static_cast<float>(FM_DEVIATION_HZ / _inputSampleRate);
    _fmDemod = freqdem_create(kf);
 
    // --- Stereo MPX decode filters ---
@@ -443,7 +442,7 @@ void Demodulator::createFmStereoObjects()
       };
       float des[NUM_BANDS] = {0.0F, 1.0F, 0.0F};
       float weights[NUM_BANDS] = {1.0F, 1.0F, 1.0F};
-      liquid_firdespm_btype btype = LIQUID_FIRDESPM_BANDPASS;
+      const liquid_firdespm_btype btype = LIQUID_FIRDESPM_BANDPASS;
       std::vector<float> h(bpfLen);
       firdespm_run(bpfLen, NUM_BANDS, bands, des, weights, nullptr,
                    btype, h.data());
@@ -452,8 +451,7 @@ void Demodulator::createFmStereoObjects()
 
    // 2) Pilot PLL (NCO running at 19 kHz, we use it doubled for 38 kHz).
    {
-      const float pilotOmega =
-         2.0F * static_cast<float>(std::numbers::pi) * 19000.0F / fs;
+      auto pilotOmega = 2.0F * static_cast<float>(std::numbers::pi) * 19000.0F / fs;
       _pilotPll = nco_crcf_create(LIQUID_NCO);
       nco_crcf_set_frequency(_pilotPll, pilotOmega);
       nco_crcf_pll_set_bandwidth(_pilotPll, 0.002F);
@@ -534,10 +532,9 @@ std::vector<float> Demodulator::resample(const std::vector<float>& input) const
    }
 
    const auto numIn = static_cast<unsigned int>(input.size());
-   const float ratio =
-      static_cast<float>(_audioSampleRate / _inputSampleRate);
+   auto ratio = static_cast<float>(_audioSampleRate / _inputSampleRate);
    const auto maxOut =
-      static_cast<size_t>(static_cast<float>(numIn) * ratio + 64);
+      static_cast<size_t>((static_cast<float>(numIn) * ratio) + 64);
    std::vector<float> output(maxOut);
    unsigned int numWritten = 0;
 
@@ -578,16 +575,16 @@ void Demodulator::stereoDecodeBlock(const float* composite, size_t numSamples,
       liquid_float_complex ncoOut;
       nco_crcf_cexpf(_pilotPll, &ncoOut);
       // Phase error = pilot * Im(nco) = pilot * sin(θ).
-      float phaseError = pilot * ncoOut.imag();
+      const float phaseError = pilot * ncoOut.imag();
       nco_crcf_pll_step(_pilotPll, phaseError);
       nco_crcf_step(_pilotPll);
 
       // ---- Generate 38 kHz carrier (double the NCO phase) ----
       // cos(2θ) = 2·cos²(θ) - 1
-      float cos2theta = 2.0F * ncoOut.real() * ncoOut.real() - 1.0F;
+      const float cos2theta = (2.0F * ncoOut.real() * ncoOut.real()) - 1.0F;
 
       // ---- Mix composite with 38 kHz to recover L-R ----
-      float diffRaw = x * cos2theta * 2.0F; // ×2 to compensate DSB-SC
+      const float diffRaw = x * cos2theta * 2.0F; // ×2 to compensate DSB-SC
       float diff = 0.0F;
       firfilt_rrrf_push(_diffLpf, diffRaw);
       firfilt_rrrf_execute(_diffLpf, &diff);

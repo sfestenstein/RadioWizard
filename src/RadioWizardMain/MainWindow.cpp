@@ -528,8 +528,8 @@ void MainWindow::startDemod()
             std::vector<float> interleaved(frames * 2);
             for (size_t i = 0; i < frames; ++i)
             {
-               interleaved[i * 2] = audio.left[i];
-               interleaved[i * 2 + 1] = audio.right[i];
+               interleaved[(i * 2)] = audio.left[i];
+               interleaved[((i * 2) + 1)] = audio.right[i];
             }
             _audioOutput->pushSamples(interleaved);
          }
@@ -579,7 +579,7 @@ SdrEngine::DemodMode MainWindow::selectedDemodMode() const
       SdrEngine::DemodMode::AM,
    };
    const int idx = _ui->_demodModeCombo->currentIndex();
-   if (idx >= 0 && idx < static_cast<int>(MODES.size()))
+   if (idx >= 0 && static_cast<size_t>(idx) < MODES.size())
    {
       return MODES[static_cast<size_t>(idx)];
    }

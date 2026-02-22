@@ -2,9 +2,9 @@
 #include <chrono>
 #include <utility>
 
-SnoozableTimer::SnoozableTimer(std::function<void ()> ahFuncion, int anSnoozePeriodMs)
-    : _function(std::move(ahFuncion))
-    , _snoozePeriodMs(anSnoozePeriodMs)
+SnoozableTimer::SnoozableTimer(std::function<void ()> function, int snoozePeriodMs)
+    : _function(std::move(function))
+    , _snoozePeriodMs(snoozePeriodMs)
 {
 
 }

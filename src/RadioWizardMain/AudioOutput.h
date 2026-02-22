@@ -1,20 +1,55 @@
 #ifndef AUDIOOUTPUT_H_
 #define AUDIOOUTPUT_H_
 
+// Third-party headers (Qt)
+#include <QAudioSink>
+#include <QIODevice>
+
 // System headers
 #include <atomic>
 #include <cstddef>
-#include <cstdint>
+#include <memory>
 #include <mutex>
 #include <vector>
 
-// macOS CoreAudio
-#include <AudioToolbox/AudioQueue.h>
+/**
+ * @class AudioBuffer
+ * @brief QIODevice subclass wrapping a thread-safe ring buffer for audio data.
+ *
+ * Used internally by AudioOutput in pull mode — QAudioSink reads PCM data
+ * from this device, while samples are fed from any thread via feedSamples().
+ */
+class AudioBuffer : public QIODevice
+{
+   Q_OBJECT
+
+public:
+   explicit AudioBuffer(size_t capacity, QObject* parent = nullptr);
+
+   /// Feed interleaved float samples from any thread.
+   void feedSamples(const std::vector<float>& samples);
+
+   /// Reset the ring buffer to empty.
+   void clear();
+
+protected:
+   qint64 readData(char* data, qint64 maxlen) override;
+   qint64 writeData(const char* data, qint64 len) override;
+   [[nodiscard]] qint64 bytesAvailable() const override;
+
+private:
+   mutable std::mutex _mutex;
+   std::vector<float> _ring;
+   size_t _readPos{0};
+   size_t _writePos{0};
+   size_t _count{0};
+   size_t _capacity;
+};
 
 /**
  * @class AudioOutput
- * @brief Plays stereo float audio samples through the default audio output
- *        device using macOS AudioQueue Services.
+ * @brief Plays stereo (or mono) float audio samples through the default audio
+ *        output device using Qt 6 QAudioSink (cross-platform).
  *
  * Usage:
  *   1. Construct with desired sample rate.
@@ -65,7 +100,7 @@ public:
    /**
     * @brief Push interleaved stereo (or mono) audio samples for playback.
     *
-    * Samples are buffered internally and consumed by the audio queue.
+    * Samples are buffered internally and consumed by the audio sink.
     * Safe to call from any thread.
     *
     * For stereo: samples are interleaved [L, R, L, R, ...].
@@ -82,31 +117,15 @@ public:
    void setVolume(float volume);
 
 private:
-   static constexpr int NUM_BUFFERS = 3;
-   static constexpr int BUFFER_SAMPLES = 4096;
-
-   // AudioQueue callback — fills a buffer from the internal ring.
-   static void audioQueueCallback(void* userData,
-                                  AudioQueueRef queue,
-                                  AudioQueueBufferRef buffer);
-
-   void fillBuffer(AudioQueueBufferRef buffer);
+   static constexpr size_t RING_CAPACITY = 512UL * 1024UL; // ~5 s stereo @ 48 kHz
 
    double _sampleRate;
    int _numChannels;
    std::atomic<float> _volume{0.8F};
    std::atomic<bool> _playing{false};
 
-   AudioQueueRef _queue{nullptr};
-   AudioQueueBufferRef _buffers[NUM_BUFFERS]{};
-
-   // Lock-protected sample ring buffer.
-   std::mutex _ringMutex;
-   std::vector<float> _ringBuffer;
-   size_t _ringReadPos{0};
-   size_t _ringWritePos{0};
-   size_t _ringCount{0};
-   static constexpr size_t RING_CAPACITY = 512 * 1024; // ~5 seconds stereo at 48 kHz
+   std::unique_ptr<QAudioSink> _audioSink;
+   std::unique_ptr<AudioBuffer> _buffer;
 };
 
 #endif // AUDIOOUTPUT_H_

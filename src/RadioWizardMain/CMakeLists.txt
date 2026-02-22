@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -44,13 +44,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(RadioWizardMain PRIVATE Qt${QT_VERSION_MAJOR}::Widgets RealTimeGraphs CommonUtils SdrEngine)
-
-# Link macOS AudioToolbox framework for AudioOutput (AudioQueue).
-if(APPLE)
-   find_library(AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
-   target_link_libraries(RadioWizardMain PRIVATE ${AUDIOTOOLBOX_FRAMEWORK})
-endif()
+target_link_libraries(RadioWizardMain PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia RealTimeGraphs CommonUtils SdrEngine)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

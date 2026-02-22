@@ -1,0 +1,8 @@
+# SdrEngine uses small C-style arrays extensively for interfacing with
+# liquid-dsp C APIs (iirfilt, firdespm, etc.), where std::array adds
+# verbosity with no practical benefit.
+---
+InheritParentConfig: true
+Checks: >
+  -modernize-avoid-c-arrays
+...

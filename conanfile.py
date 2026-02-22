@@ -83,6 +83,7 @@ class RadioWizardConan(ConanFile):
       # Qt 6 options — enable only the modules we need
       self.options["qt/*"].shared = True     # Qt must be shared
       self.options["qt/*"].qtshadertools = True
+      self.options["qt/*"].qtmultimedia = True
       self.options["qt/*"].gui = True
       self.options["qt/*"].widgets = True
       self.options["qt/*"].opengl = "desktop"
