@@ -16,58 +16,18 @@ RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spe
 ```
 RadioWizard/
 ├── src/
-│   ├── TestApps/            # Test/demo executables
-│   │   ├── ZyrePublisherTest.cpp
-│   │   ├── ZyreSubscriberTest.cpp
-│   │   ├── HighBandwidthPublisherTester.cpp
-│   │   ├── HighBandwidthSubscriberTester.cpp
-│   │   ├── RealTimeGraphsTest.cpp      # Qt visualization demo
-│   │   ├── Vita49FileCodec.cpp         # VITA 49 file encode/decode
-│   │   ├── Vita49PerfBenchmark.cpp     # VITA 49 performance benchmark
-│   │   └── Vita49RoundTripTest.cpp     # VITA 49 round-trip validation
-│   └── libs/               # Libraries
-│       ├── CommonUtils/    # Common utility library
-│       │   ├── GeneralLogger.h   # Async spdlog wrapper with macros
-│       │   ├── GeneralLogger.cpp
-│       │   ├── Timer.h           # Basic timer class
-│       │   ├── Timer.cpp
-│       │   ├── SnoozableTimer.h  # Timer with snooze capability
-│       │   ├── SnoozableTimer.cpp
-│       │   ├── CircularBuffer.h  # Lock-free circular buffer
-│       │   └── DataHandler.h     # Data handling (header-only)
-│       ├── PubSub/         # Publish-Subscribe library
-│       │   ├── ZyreNode.h        # Base Zyre node class
-│       │   ├── ZyrePublisher.h   # Zyre-based publisher
-│       │   ├── ZyreSubscriber.h  # Zyre-based subscriber
-│       │   ├── HighBandwidthPublisher.h   # UDP multicast publisher
-│       │   └── HighBandwidthSubscriber.h  # UDP multicast subscriber
-│       ├── RealTimeGraphs/ # Qt widget library
-│       │   ├── SpectrumWidget.h      # Real-time spectrum display
-│       │   ├── WaterfallWidget.h     # Waterfall/spectrogram display
-│       │   ├── ConstellationWidget.h # IQ constellation display
-│       │   └── ColorMap.h            # Color map utilities
-│       ├── SdrEngine/      # SDR device abstraction + DSP pipeline (no Qt dep)
-│       │   ├── ISdrDevice.h          # Abstract SDR device interface
-│       │   ├── RtlSdrDevice.h/.cpp   # RTL-SDR implementation (librtlsdr)
-│       │   ├── FftProcessor.h/.cpp   # FFTW-based FFT with configurable windowing
-│       │   ├── SdrEngine.h/.cpp      # Orchestrator: device + FFT + DataHandler output
-│       │   └── SdrTypes.h            # Common types (IqBuffer, SpectrumData, etc.)
-│       ├── Vita49_2/       # VITA 49.2 signal data packet library
-│       │   ├── PacketHeader.h        # VITA 49 packet header
-│       │   ├── SignalDataPacket.h    # Signal data packet encode/decode
-│       │   ├── ContextPacket.h       # Context packet encode/decode
-│       │   ├── Vita49Codec.h         # High-level codec for file I/O
-│       │   ├── Vita49Types.h         # VITA 49 type definitions
-│       │   └── ByteSwap.h           # Endian conversion utilities
-│       └── proto/          # Protocol buffer library
-│           └── proto-messages/ # .proto source files
-├── tests/                  # Unit tests
-│   ├── CommonUtilsTests/   # Tests for CommonUtils library
-│   ├── PubSubTests/        # Tests for PubSub library
-│   ├── SdrEngineTests/     # Tests for SdrEngine library
-│   └── Vita49_2Tests/      # Tests for VITA 49.2 library
-├── docs/                   # Documentation
-└── .github/                # CI/CD and this file
+│   ├── RadioWizardMain/      # Main Qt application (SDR controls + visualizations)
+│   ├── TestApps/             # Test/demo executables
+│   └── libs/
+│       ├── CommonUtils/      # Common utilities (logging, timers, buffers)
+│       ├── PubSub/           # Publish-Subscribe messaging (Zyre + UDP multicast)
+│       ├── SdrEngine/        # SDR device abstraction + DSP pipeline
+│       ├── RealTimeGraphs/   # Qt 6 real-time visualization widgets
+│       ├── Vita49_2/         # VITA 49.2 signal data packet library
+│       └── proto/            # Protocol buffer definitions
+├── tests/                    # Unit tests (one directory per library)
+├── docs/                     # Documentation
+└── .github/                  # CI/CD and this file
 ```
 
 ## Coding Conventions
@@ -132,19 +92,17 @@ private:
 
 ## Common Tasks
 
-### Adding a New CommonUtils Class
+### Adding a New Library Class
 
-1. Create `src/libs/CommonUtils/NewClass.h`
-2. Create `src/libs/CommonUtils/NewClass.cpp` (auto-discovered via `file(GLOB)`)
-3. Create `tests/CommonUtilsTests/NewClassUt.cpp` (auto-discovered via `file(GLOB)`)
+All libraries use `file(GLOB)` for source discovery. The pattern is the same for
+CommonUtils, PubSub, SdrEngine, RealTimeGraphs, and Vita49_2:
+
+1. Create `src/libs/<Library>/NewClass.h`
+2. Create `src/libs/<Library>/NewClass.cpp`
+3. Create `tests/<Library>Tests/NewClassUt.cpp`
 4. Re-run CMake configure to pick up new files
 
-### Adding a New PubSub Class
-
-1. Create `src/libs/PubSub/NewClass.h`
-2. Create `src/libs/PubSub/NewClass.cpp` (auto-discovered via `file(GLOB)`)
-3. Create `tests/PubSubTests/NewClassUt.cpp` (auto-discovered via `file(GLOB)`)
-4. Re-run CMake configure to pick up new files
+RealTimeGraphs has AUTOMOC enabled; Qt signals/slots are processed automatically.
 
 ### Adding a New Proto Message
 
@@ -152,21 +110,7 @@ private:
 2. Proto files are auto-discovered via glob in `src/libs/proto/CMakeLists.txt`
 3. Include generated header as `#include "message_name.pb.h"`
 
-### Adding a New RealTimeGraphs Widget (Qt 6)
-
-1. Create `src/libs/RealTimeGraphs/NewWidget.h`
-2. Create `src/libs/RealTimeGraphs/NewWidget.cpp` (auto-discovered via `file(GLOB)`)
-3. AUTOMOC is enabled; Qt signals/slots are processed automatically
-4. Re-run CMake configure to pick up new files
-
-### Adding a New Vita49_2 Class
-
-1. Create `src/libs/Vita49_2/NewClass.h`
-2. Create `src/libs/Vita49_2/NewClass.cpp` (auto-discovered via `file(GLOB)`)
-3. Create `tests/Vita49_2Tests/NewClassUt.cpp` (auto-discovered via `file(GLOB)`)
-4. Re-run CMake configure to pick up new files
-
-### Adding a New Application
+### Adding a New Test Application
 
 1. Create `src/TestApps/new_app_main.cpp`
 2. Add to `src/TestApps/CMakeLists.txt`:
@@ -194,26 +138,13 @@ ctest --preset debug
 cmake --build --preset coverage --target CommonUtilsCoverage
 ```
 
-## CMake Targets
+## CMake Target Naming Conventions
 
-- `CommonUtils` - CommonUtils shared library
-- `PubSubLib` - PubSub shared library (Zyre and HighBandwidth messaging)
-- `ProtoLib` - Protobuf library (alias: `RadioWizard::proto`)
-- `Vita49_2` - VITA 49.2 signal data packet library
-- `RealTimeGraphs` - Qt widget library for spectrum/waterfall/constellation display
-- `ZyrePublisher` - Zyre publisher test application
-- `ZyreSubscriber` - Zyre subscriber test application
-- `HighBandwidthPublisher` - UDP multicast publisher test application
-- `HighBandwidthSubscriber` - UDP multicast subscriber test application
-- `RealTimeGraphsTest` - Qt interactive test application
-- `Vita49FileCodec` - VITA 49 file encode/decode application
-- `Vita49PerfBenchmark` - VITA 49 performance benchmark application
-- `Vita49RoundTripTest` - VITA 49 round-trip validation application
-- `CommonUtilsTests` - CommonUtils unit tests
-- `PubSubTests` - PubSub unit tests
-- `Vita49_2Tests` - VITA 49.2 unit tests
-- `CommonUtilsCoverage` - Coverage report target (when `ENABLE_COVERAGE=ON`)
-- `PubSubCoverage` - Coverage report target (when `ENABLE_COVERAGE=ON`)
+- **Libraries**: Named after their directory (e.g., `CommonUtils`, `SdrEngine`, `RealTimeGraphs`, `Vita49_2`). Exception: `PubSubLib` for PubSub, `ProtoLib` (alias `RadioWizard::proto`) for proto.
+- **Unit tests**: `UnitTests_<LibraryName>` (e.g., `UnitTests_CommonUtils`)
+- **Coverage**: `<LibraryName>Coverage` (e.g., `CommonUtilsCoverage`) — available when `ENABLE_COVERAGE=ON`
+- **Main application**: `RadioWizardMain`
+- **Test applications**: Named after their purpose (defined in `src/TestApps/CMakeLists.txt`)
 
 ## Dependencies Available
 

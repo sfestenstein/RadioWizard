@@ -86,6 +86,9 @@ cmake --build --preset coverage --target CommonUtilsCoverage
 #### 4. Run Applications
 
 ```bash
+# Main RadioWizard application (Qt GUI with SDR engine)
+./build/debug/bin/RadioWizardMain
+
 # Zyre-based pub/sub (peer-to-peer discovery)
 ./build/debug/bin/ZyreSubscriber  # In terminal 1
 ./build/debug/bin/ZyrePublisher   # In terminal 2
@@ -112,59 +115,19 @@ cmake --build --preset coverage --target CommonUtilsCoverage
 ```
 RadioWizard/
 ├── src/
-│   ├── TestApps/                 # Test/demo executables
-│   │   ├── ZyrePublisherTest.cpp
-│   │   ├── ZyreSubscriberTest.cpp
-│   │   ├── HighBandwidthPublisherTester.cpp
-│   │   ├── HighBandwidthSubscriberTester.cpp
-│   │   ├── RealTimeGraphsTest.cpp        # Qt visualization demo
-│   │   ├── Vita49FileCodec.cpp           # VITA 49 file encode/decode
-│   │   ├── Vita49PerfBenchmark.cpp       # VITA 49 performance benchmark
-│   │   └── Vita49RoundTripTest.cpp       # VITA 49 round-trip validation
-│   └── libs/                     # Libraries
-│       ├── CommonUtils/          # Common utilities library
-│       │   ├── GeneralLogger.h       # Async logging wrapper (spdlog)
-│       │   ├── Timer.h               # Basic timer class
-│       │   ├── SnoozableTimer.h      # Timer with snooze capability
-│       │   ├── CircularBuffer.h      # Lock-free circular buffer
-│       │   └── DataHandler.h         # Data handling utilities
-│       ├── PubSub/               # Publish-Subscribe messaging library
-│       │   ├── ZyreNode.h            # Base Zyre node class
-│       │   ├── ZyrePublisher.h       # Zyre-based publisher
-│       │   ├── ZyreSubscriber.h      # Zyre-based subscriber
-│       │   ├── HighBandwidthPublisher.h   # UDP multicast publisher
-│       │   └── HighBandwidthSubscriber.h  # UDP multicast subscriber
-│       ├── RealTimeGraphs/       # Qt 6 real-time visualization widgets
-│       │   ├── SpectrumWidget.h      # Real-time spectrum display
-│       │   ├── WaterfallWidget.h     # Waterfall/spectrogram display
-│       │   ├── ConstellationWidget.h # IQ constellation display
-│       │   └── ColorMap.h            # Color map utilities
-│       ├── Vita49_2/             # VITA 49.2 signal data packet library
-│       │   ├── PacketHeader.h        # VITA 49 packet header
-│       │   ├── SignalDataPacket.h    # Signal data packet encode/decode
-│       │   ├── ContextPacket.h       # Context packet encode/decode
-│       │   ├── Vita49Codec.h         # High-level codec for file I/O
-│       │   ├── Vita49Types.h         # VITA 49 type definitions
-│       │   └── ByteSwap.h           # Endian conversion utilities
-│       └── proto/                # Protocol buffer library
-│           └── proto-messages/       # Protocol buffer definitions
-│               ├── sensor_data.proto
-│               ├── commands.proto
-│               └── configuration.proto
-├── tests/                        # Unit tests
-│   ├── CommonUtilsTests/         # CommonUtils unit tests
-│   ├── PubSubTests/              # PubSub unit tests
-│   └── Vita49_2Tests/            # VITA 49.2 unit tests
-├── docs/                         # Documentation
-├── .github/                      # GitHub configuration
-│   ├── workflows/                # CI/CD pipelines
-│   └── copilot-instructions.md
-├── CMakeLists.txt                # Root CMake configuration
-├── CMakePresets.json             # CMake presets
-├── conanfile.py                  # Conan package configuration
-├── .clang-format                 # Code formatting rules
-├── .clang-tidy                   # Static analysis rules
-└── .editorconfig                 # Editor configuration
+│   ├── RadioWizardMain/      # Main Qt application (SDR controls + visualizations)
+│   ├── TestApps/             # Test/demo executables
+│   └── libs/
+│       ├── CommonUtils/      # Common utilities (logging, timers, buffers)
+│       ├── PubSub/           # Publish-Subscribe messaging (Zyre + UDP multicast)
+│       ├── SdrEngine/        # SDR device abstraction + DSP pipeline
+│       ├── RealTimeGraphs/   # Qt 6 real-time visualization widgets
+│       ├── Vita49_2/         # VITA 49.2 signal data packet library
+│       └── proto/            # Protocol buffer definitions
+├── tests/                    # Unit tests (one directory per library)
+├── docs/                     # Documentation
+├── sanitizer_suppressions/   # ASan/LSan suppression files
+└── .github/                  # CI/CD workflows and configuration
 ```
 
 ## Documentation
@@ -179,12 +142,15 @@ The project uses CMake presets for consistent build configurations across differ
 
 ### Configure Presets
 
-| Preset | Build Type | Tests | Coverage | Sanitizers | Use Case |
-|--------|------------|-------|----------|------------|----------|
-| `debug` | Debug | ✅ | ❌ | ✅ | Local development |
-| `release` | Release | ❌ | ❌ | ❌ | Production builds |
-| `coverage` | Debug | ✅ | ✅ | ❌ | Code coverage reports |
-| `ci-linux` | Debug | ✅ | ✅ | ❌ | GitHub Actions CI |
+| Preset | Build Type | Tests | Coverage | Sanitizers | Clang-Tidy | Use Case |
+|--------|------------|-------|----------|------------|------------|----------|
+| `debug` | Debug | ✅ | ❌ | ✅ | ❌ | Local development |
+| `debug-clang-tidy` | Debug | ✅ | ❌ | ✅ | ✅ | Development + static analysis |
+| `release` | Release | ❌ | ❌ | ❌ | ❌ | Production builds |
+| `relwithdebinfo` | RelWithDebInfo | ✅ | ❌ | ❌ | ❌ | Profiling / optimized debug |
+| `coverage` | Debug | ✅ | ✅ | ❌ | ✅ | Code coverage reports |
+| `ci-linux` | Debug | ✅ | ✅ | ❌ | ❌ | GitHub Actions CI (Linux) |
+| `ci-macos` | Debug | ✅ | ❌ | ❌ | ❌ | GitHub Actions CI (macOS) |
 
 ### Using Presets
 
@@ -234,8 +200,16 @@ Managed by Conan 2.0:
 | cppzmq | 4.10.0 | C++ ZeroMQ bindings |
 | czmq | 4.2.1 | High-level C ZeroMQ binding |
 | zyre | 2.0.1 | Peer-to-peer discovery |
+| fftw | 3.3.10 | Fast Fourier Transform (SdrEngine) |
+| liquid-dsp | 1.6.0 | DSP primitives — filters, NCO, resampling (SdrEngine) |
+| qt | 6.10.1 | GUI widgets (RealTimeGraphs, RadioWizardMain) |
 | gtest | 1.14.0 | Unit testing |
-| qt | 6.10.1 | GUI widgets (RealTimeGraphs) |
+
+System dependencies (not managed by Conan):
+
+| Package | Purpose |
+|---------|---------|
+| librtlsdr | RTL-SDR hardware driver library (SdrEngine) |
 
 ## License
 

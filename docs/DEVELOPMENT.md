@@ -100,7 +100,7 @@ git push origin feature/my-feature
 | Static Members | s_ prefix | `s_instance` |
 | Constants | UPPER_CASE | `MAX_RETRIES` |
 | Namespaces | PascalCase | `CommonUtils` |
-| Files | PascalCase | `AsyncQueue.hpp` |
+| Files | PascalCase | `AsyncQueue.h` |
 
 ### Code Style
 
@@ -115,7 +115,7 @@ void processData()
    }
 }
 
-// Use m_ prefix for member variables
+// Use _ prefix for member variables
 class MyClass
 {
 public:
@@ -158,7 +158,7 @@ public:
 // 3. Third-party headers
 // 4. System headers
 
-#include "MyClass.hpp"
+#include "MyClass.h"
 
 #include "CommonUtils/GeneralLogger.h"
 #include "proto/messages.pb.h"
@@ -235,6 +235,15 @@ int myFunction(int param1, std::string_view param2);
 5. Tests are auto-discovered via `file(GLOB)` in `tests/Vita49_2Tests/CMakeLists.txt`
 6. Re-run CMake configure to pick up new files
 
+### Adding a New SdrEngine Class
+
+1. Create header: `src/libs/SdrEngine/NewClass.h`
+2. Create source: `src/libs/SdrEngine/NewClass.cpp`
+3. Files are auto-discovered via `file(GLOB)` in `src/libs/SdrEngine/CMakeLists.txt`
+4. Create test: `tests/SdrEngineTests/NewClassUt.cpp`
+5. Tests are auto-discovered via `file(GLOB)` in `tests/SdrEngineTests/CMakeLists.txt`
+6. Re-run CMake configure to pick up new files
+
 ### Adding a New Application
 
 1. Create source: `src/TestApps/new_app_main.cpp`
@@ -271,7 +280,7 @@ protected:
       // Common cleanup
    }
 
-   MyClass m_instance;
+   MyClass _instance;
 };
 
 // Name tests descriptively
@@ -281,7 +290,7 @@ TEST_F(MyClassTest, MethodName_Condition_ExpectedResult)
    // ...
 
    // Act
-   auto result = m_instance.method();
+   auto result = _instance.method();
 
    // Assert
    EXPECT_EQ(result, expected);
@@ -329,9 +338,9 @@ docs(readme): update build instructions
 
 The GitHub Actions workflow:
 
-1. **Build**: Compiles on Linux and Windows (MinGW)
-2. **Test**: Runs all unit tests
-3. **Coverage**: Generates and uploads coverage reports
-4. **Quality**: Checks code formatting
+1. **Build**: Compiles on Linux (GCC) and macOS (Clang)
+2. **Test**: Runs all unit tests (Linux)
+3. **Coverage**: Generates and uploads coverage reports to Codecov (Linux)
+4. **Cache**: Conan packages are cached between runs
 
 All checks must pass before merging.

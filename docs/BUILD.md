@@ -11,20 +11,6 @@ This document provides detailed instructions for building the RadioWizard projec
 - **Conan 2.0+**: `pip install conan`
 - **Ninja** (recommended): [Download](https://ninja-build.org/)
 
-### Windows (MinGW) (Not supported, conan+mingw+zmq doesn't build quite right!)
-
-1. **Install MSYS2**: [Download](https://www.msys2.org/)
-
-2. **Install MinGW-w64 toolchain **:
-   ```bash
-   pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
-   ```
-
-3. **Add to PATH**:
-   ```
-   C:\msys64\mingw64\bin
-   ```
-
 ### Linux (Ubuntu/Debian)
 
 ```bash
@@ -88,18 +74,6 @@ This creates a default profile at `~/.conan2/profiles/default`.
 conan profile show
 ```
 
-For MinGW on Windows, the profile should show:
-```
-[settings]
-arch=x86_64
-build_type=Release
-compiler=gcc
-compiler.cppstd=gnu17
-compiler.libcxx=libstdc++11
-compiler.version=13
-os=Windows
-```
-
 ## Build Configurations
 
 ### Debug Build (Recommended for Development)
@@ -134,11 +108,14 @@ cmake --build --preset release
 cmake --preset coverage
 cmake --build --preset coverage
 
-# Run tests and generate coverage
-cmake --build --preset coverage --target coverage
+# Run tests and generate coverage (per-library targets)
+ctest --preset coverage
+cmake --build --preset coverage --target CommonUtilsCoverage
+cmake --build --preset coverage --target PubSubCoverage
+cmake --build --preset coverage --target Vita49_2Coverage
 
 # View report
-# Open build/coverage/coverage_report/index.html
+# Open build/coverage/CommonUtilsCoverage/index.html
 ```
 
 ## Build Options
@@ -193,14 +170,27 @@ ctest --output-on-failure
 After building:
 
 ```bash
-# Start subscriber first (in terminal 1)
-./build/debug/bin/subscriber
+# Main RadioWizard application (Qt GUI with SDR engine)
+./build/debug/bin/RadioWizardMain
 
-# Start publisher (in terminal 2)
-./build/debug/bin/publisher
+# Zyre-based pub/sub (peer-to-peer discovery)
+./build/debug/bin/ZyreSubscriber   # In terminal 1
+./build/debug/bin/ZyrePublisher    # In terminal 2
+
+# High-bandwidth UDP multicast pub/sub
+./build/debug/bin/HighBandwidthSubscriber   # In terminal 1
+./build/debug/bin/HighBandwidthPublisher    # In terminal 2
+
+# RealTimeGraphs interactive test
+./build/debug/bin/RealTimeGraphsTest
+
+# VITA 49 utilities
+./build/debug/bin/Vita49FileCodec
+./build/debug/bin/Vita49PerfBenchmark
+./build/debug/bin/Vita49RoundTripTest
 ```
 
-You should see sensor data messages being published every second and received by the subscriber.
+For the Zyre pub/sub, you should see sensor data messages being published every second and received by the subscriber.
 
 ## Troubleshooting
 
@@ -231,23 +221,6 @@ conan list "protobuf/*"
 
 # Manually specify path
 cmake -DProtobuf_PROTOC_EXECUTABLE=/path/to/protoc ...
-```
-
-### MinGW Path Issues
-
-Ensure MinGW bin directory is in PATH before other compilers:
-```bash
-# Check which gcc is being used
-which gcc
-gcc --version
-```
-
-### Sanitizer Issues on Windows
-
-ASan may have issues with some MinGW versions. Disable if needed:
-```bash
-conan install . -o enable_sanitizers=False ...
-cmake ... -DENABLE_SANITIZERS=OFF
 ```
 
 ### Qt / RealTimeGraphs Build Issues

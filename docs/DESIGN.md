@@ -10,51 +10,47 @@ RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spe
 
 ### Component Diagram
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                              Applications                                        │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────────┐       │
-│  │ ZyrePublisher   │  │ ZyreSubscriber  │  │ HighBandwidth Pub/Sub       │       │
-│  │ (Zyre P2P)      │  │ (Zyre P2P)      │  │ (UDP Multicast)             │       │
-│  └────────┬────────┘  └────────┬────────┘  └──────────────┬──────────────┘       │
-│           │                    │                          │                       │
-│  ┌─────────────────────────────────────┐  ┌────────────────────────────────┐      │
-│  │ RealTimeGraphsTest (Qt 6)            │  │ Vita49 File / Perf / RoundTrip│      │
-│  └───────────────┬─────────────────────┘  └──────────────┬─────────────────┘      │
-│                      │                                   │                       │
-├──────────────────────┼───────────────────────────────────┼───────────────────────┤
-│                      │         Libraries                 │                       │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │                         PubSub Library                                     │   │
-│  │  ┌───────────────┐  ┌───────────────┐  ┌─────────────────────────────┐    │   │
-│  │  │   ZyreNode    │  │ ZyrePublisher │  │ HighBandwidthPublisher      │    │   │
-│  │  │   (base)      │  │ ZyreSubscriber│  │ HighBandwidthSubscriber     │    │   │
-│  │  └───────────────┘  └───────────────┘  └─────────────────────────────┘    │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │              RealTimeGraphs Library (Qt 6)                                  │   │
-│  │  ┌─────────────────┐ ┌───────────────────┐ ┌───────────────────────────┐  │   │
-│  │  │ SpectrumWidget  │ │ WaterfallWidget   │ │ ConstellationWidget       │  │   │
-│  │  └─────────────────┘ └───────────────────┘ └───────────────────────────┘  │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │                    Vita49_2 Library                                          │   │
-│  │  ┌─────────────────┐ ┌───────────────────┐ ┌───────────────────────────┐  │   │
-│  │  │  PacketHeader   │ │ SignalDataPacket  │ │ ContextPacket             │  │   │
-│  │  │  Vita49Types    │ │ Vita49Codec       │ │ ByteSwap                  │  │   │
-│  │  └─────────────────┘ └───────────────────┘ └───────────────────────────┘  │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│  ┌─────────────────┐                    ┌─────────────────┐                      │
-│  │   Proto Lib     │                    │  CommonUtils    │                      │
-│  │   (protobuf)    │                    │  (utilities)    │                      │
-│  └─────────────────┘                    └─────────────────┘                      │
-│                                                                                  │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│                         External Dependencies                                    │
-│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐  │
-│  │ spdlog │ │protobuf│ │ ZeroMQ │ │ cppzmq │ │  CZMQ  │ │  Zyre  │ │  Qt 6  │  │
-│  └────────┘ └────────┘ └────────┘ └────────┘ └────────┘ └────────┘ └────────┘  │
-└──────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+   subgraph Application
+      RWM["<b>RadioWizardMain</b><br/>Qt GUI — SDR controls,<br/>spectrum, waterfall, IQ"]
+   end
+
+   subgraph Libraries
+      SdrEngine["<b>SdrEngine</b><br/>ISdrDevice, RtlSdrDevice,<br/>FftProcessor, ChannelFilter,<br/>SdrEngine, SdrTypes"]
+      PubSub["<b>PubSub</b><br/>ZyreNode, ZyrePublisher,<br/>ZyreSubscriber,<br/>HighBandwidthPublisher,<br/>HighBandwidthSubscriber"]
+      RTG["<b>RealTimeGraphs</b><br/>PlotWidgetBase, SpectrumWidget,<br/>WaterfallWidget, ConstellationWidget,<br/>ColorMap, ColorBarWidget,<br/>BandwidthSelector, PlotCursorOverlay"]
+      Vita49["<b>Vita49_2</b><br/>PacketHeader, SignalDataPacket,<br/>ContextPacket, Vita49Codec,<br/>Vita49Types, ByteSwap"]
+      PL["<b>ProtoLib</b><br/>protobuf messages"]
+      CU["<b>CommonUtils</b><br/>GeneralLogger, Timer,<br/>SnoozableTimer, CircularBuffer,<br/>DataHandler"]
+
+      %% Force 2-row × 3-column layout
+      SdrEngine ~~~ Vita49
+      PubSub ~~~ PL
+      RTG ~~~ CU
+   end
+
+   subgraph TestApps["Test / Demo Applications"]
+      ZP["<b>Zyre Pub/Sub</b><br/>Peer-to-peer messaging"]
+      HB["<b>HighBandwidth Pub/Sub</b><br/>UDP Multicast"]
+      RTT["<b>RealTimeGraphsTest</b>"]
+      V49A["<b>Vita49 Apps</b><br/>FileCodec, PerfBenchmark,<br/>RoundTripTest"]
+   end
+
+   subgraph External["External Dependencies"]
+      spdlog
+      protobuf
+      Qt6["Qt 6"]
+      ZeroMQ["ZeroMQ, cppzmq,<br/>CZMQ, Zyre"]
+      FFTW3["FFTW3, liquid-dsp,<br/>librtlsdr"]
+   end
+
+   %% Invisible edges to enforce vertical ordering
+   RWM ~~~ SdrEngine
+   Vita49 ~~~ ZP
+   PL ~~~ HB
+   CU ~~~ RTT
+   ZP ~~~ spdlog
 ```
 
 ### Libraries
@@ -81,8 +77,14 @@ The CommonUtils library provides reusable components for common tasks:
   - Useful for implementing watchdog patterns
 
 - **DataHandler**: Data handling utilities (header-only):
-  - Template-based data processing
-  - Flexible data transformation support
+  - Thread-safe queue that dispatches data to registered listener callbacks
+  - Runs listeners on a dedicated worker thread, decoupling producers from consumers
+  - Template-based for flexible data types
+
+- **CircularBuffer**: Fixed-capacity circular buffer (header-only):
+  - Template-based for arbitrary element types
+  - Silently overwrites the oldest entries when full
+  - Used for time-series history (e.g., waterfall scan lines)
 
 #### PubSub Library (`src/libs/PubSub/`)
 
@@ -119,15 +121,61 @@ The PubSub library provides two messaging patterns:
   - Configurable reassembly timeout
   - Thread-safe subscription (can subscribe before or after start)
 
+#### SdrEngine Library (`src/libs/SdrEngine/`)
+
+The SdrEngine library provides a Qt-free SDR device abstraction and DSP processing
+pipeline. It uses `DataHandler` (CommonUtils) for data distribution to downstream
+consumers.
+
+- **ISdrDevice**: Abstract interface for SDR hardware:
+  - Device-agnostic API for tuning, gain control, sample rate, and async streaming
+  - Implementations wrap specific hardware APIs behind a common surface
+
+- **RtlSdrDevice**: Concrete ISdrDevice for RTL-SDR hardware:
+  - Wraps the librtlsdr C API
+  - Async streaming on a dedicated thread via `rtlsdr_read_async`
+
+- **FftProcessor**: Windowed FFT processing:
+  - Produces magnitude spectrum in dB using FFTW
+  - Thread-safe reconfiguration of FFT size and window function
+  - Supports Hann, Hamming, Blackman-Harris, and flat-top windows
+
+- **ChannelFilter**: Channel isolation from wideband I/Q:
+  - Frequency-shifts a selected channel using an NCO (liquid-dsp)
+  - Band-pass filters with a FIR filter
+  - Decimates to match the selected bandwidth via multi-stage resampling
+
+- **SdrEngine**: High-level orchestrator:
+  - Owns an ISdrDevice, FftProcessor, and two DataHandlers (spectrum + raw I/Q)
+  - Runs an async device → FFT → publish pipeline on dedicated threads
+
+- **SdrTypes**: Common value types:
+  - `IqSample` (complex float), `IqBuffer` (timestamped I/Q chunk with metadata),
+    `SpectrumData` (FFT magnitude spectrum with metadata)
+
+Dependencies: FFTW3 (FFT), liquid-dsp (filters, NCO, resampling), librtlsdr (RTL-SDR
+hardware), CommonUtils.
+
 #### RealTimeGraphs Library (`src/libs/RealTimeGraphs/`)
 
 The RealTimeGraphs library provides custom QPainter-based widgets for real-time
 signal visualization.
 
-- **SpectrumWidget**: Real-time spectrum (frequency-domain) display
-- **WaterfallWidget**: Waterfall / spectrogram display
-- **ConstellationWidget**: IQ constellation diagram
-- **ColorMap**: Configurable color-map utilities used by the widgets
+- **PlotWidgetBase**: Abstract base class for frequency-domain plot widgets that
+  centralises cursor overlay, bandwidth selector, and shared mouse-interaction logic
+- **SpectrumWidget**: Real-time spectrum (frequency-domain) bar-chart display with
+  per-bin coloring from the active ColorMap
+- **WaterfallWidget**: Waterfall / spectrogram display where each new row scrolls
+  upward, backed by a CircularBuffer of scan lines
+- **ConstellationWidget**: IQ constellation diagram with fading older points
+- **ColorMap**: Pre-built 256-entry color lookup tables (Viridis, Inferno, etc.)
+- **ColorBarWidget**: Color-map gradient strip with interactive dB-range spin boxes
+- **BandwidthSelector**: Manages bandwidth cursor state including half-width in Hz,
+  mouse-wheel scaling with clamping, and Hz-to-fraction conversion
+- **PlotCursorOverlay**: Reusable, axis-agnostic cursor overlay providing a tracking
+  crosshair, two double-click measurement cursors, and a delta readout box
+- **CommonGuiUtils**: Utility function to convert frequency in Hz to a human-readable
+  string (Hz/kHz/MHz/GHz)
 
 Dependencies: Qt6::Core, Qt6::Gui, Qt6::Widgets, Qt6::OpenGLWidgets, spdlog,
 CommonUtils.
@@ -156,7 +204,14 @@ processing systems:
 - **Vita49Types**: Type definitions and constants for the VITA 49.2 standard
 - **ByteSwap**: Endian conversion utilities for network byte order compliance
 
-### Applications (`src/TestApps/`)
+### Applications (`src/TestApps/`) and Main Application
+
+#### RadioWizardMain (`src/RadioWizardMain/`)
+
+The main Qt application:
+- Hosts the SdrEngine controls, spectrum/waterfall display, and constellation diagram
+- Links to RealTimeGraphs, SdrEngine, and CommonUtils
+- Uses Qt Designer `.ui` form for layout
 
 #### ZyrePublisher (`src/TestApps/ZyrePublisherTest.cpp`)
 
@@ -273,12 +328,12 @@ Coverage is collected using gcov/lcov:
 
 Areas for potential enhancement:
 
-1. **SDR Hardware Drivers**: Integrate SoapySDR or direct device libraries (RTL-SDR, USRP, HackRF) for hardware control
-2. **Signal Demodulation**: Implement demodulation chains (AM, FM, SSB, PSK, QAM, etc.)
+1. **Additional SDR Hardware Drivers**: Extend ISdrDevice with SoapySDR, USRP, or HackRF implementations alongside the existing RTL-SDR driver
+2. **Signal Demodulation**: Implement demodulation chains (AM, FM, SSB, PSK, QAM, etc.) using the existing ChannelFilter and liquid-dsp infrastructure
 3. **Signal Isolation**: Automatic signal detection and isolation from wideband captures
-4. **DSP Pipeline**: Build a modular DSP processing pipeline (filters, decimation, channelization)
+4. **Extended DSP Pipeline**: Expand the SdrEngine pipeline with additional processing stages (decimation chains, AGC, etc.)
 5. **Benchmarking**: Add Google Benchmark for DSP performance testing
-6. **Documentation**: Add Doxygen for API documentation
+6. **Documentation**: Add Doxygen for API documentation generation
 7. **Packaging**: Add CPack for installers/packages
 8. **Embedded Targets**: Add toolchain files for cross-compilation to SDR platforms
 9. **Fuzzing**: Add libFuzzer for fuzz testing of packet parsers
