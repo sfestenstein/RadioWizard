@@ -157,7 +157,8 @@ void FrequencyInputWidget::paintEvent(QPaintEvent* /*event*/)
       // Digit text.
       painter.setFont(_digitFont);
       painter.setPen(hovered ? digitHover : digitNormal);
-      painter.drawText(r, Qt::AlignCenter, QString::number(_digits[i]));
+      const auto digitIdx = static_cast<size_t>(i);
+      painter.drawText(r, Qt::AlignCenter, QString::number(_digits[digitIdx]));
    }
 
    // --- Decimal point ---

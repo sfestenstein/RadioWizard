@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include "GeneralLogger.h"
+#include "StackTrace.h"
 
 #include <QApplication>
 #include <QPalette>
@@ -10,6 +11,23 @@ int main(int argc, char* argv[])
 {
    CommonUtils::GeneralLogger logger;
    logger.init("RadioWizardMain");
+
+   // Install crash signal handlers with a best-effort hook that flushes
+   // the spdlog loggers before the process terminates.
+   CommonUtils::StackTrace::setPostCrashHook([](int sig)
+   {
+      GPCRIT("Caught fatal signal {} — see stderr for stack trace", sig);
+      if (CommonUtils::GeneralLogger::s_traceLogger)
+      {
+         CommonUtils::GeneralLogger::s_traceLogger->dump_backtrace();
+         CommonUtils::GeneralLogger::s_traceLogger->flush();
+      }
+      if (CommonUtils::GeneralLogger::s_generalLogger)
+      {
+         CommonUtils::GeneralLogger::s_generalLogger->flush();
+      }
+   });
+   CommonUtils::StackTrace::installSignalHandlers();
 
    const QApplication a(argc, argv);
 

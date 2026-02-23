@@ -4,11 +4,9 @@
 #include <cmath>
 #include <complex>
 #include <numbers>
-#include <numeric>
 #include <vector>
 
 using SdrEngine::Demodulator;
-using SdrEngine::DemodAudio;
 using SdrEngine::DemodMode;
 using SdrEngine::IqSample;
 
