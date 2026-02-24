@@ -80,6 +80,11 @@ uint64_t SdrEngine::getCenterFrequency() const
    return _centerFreqHz;
 }
 
+double SdrEngine::getCenterFrequencyMHz() const
+{
+   return static_cast<double>(getCenterFrequency()) / 1.0e6;
+}
+
 bool SdrEngine::setSampleRate(uint32_t rateHz)
 {
    _sampleRateHz = rateHz;

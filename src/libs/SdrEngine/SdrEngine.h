@@ -76,6 +76,12 @@ public:
     */
    [[nodiscard]] uint64_t getCenterFrequency() const;
 
+   /**
+    * @brief Get the current centre frequency in MHz.
+    * @return Current centre frequency in MHz.
+    */
+   [[nodiscard]] double getCenterFrequencyMHz() const;
+
    /** @brief Set sample rate in Hz. */
    bool setSampleRate(uint32_t rateHz);
 

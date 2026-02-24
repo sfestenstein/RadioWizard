@@ -37,7 +37,6 @@ jobs:
             ninja-build \
             python3-pip \
             lcov \
-            protobuf-compiler \
             librtlsdr-dev \
             libgl-dev \
             xkb-data

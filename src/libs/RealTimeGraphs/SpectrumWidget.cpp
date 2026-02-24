@@ -149,9 +149,10 @@ void SpectrumWidget::setColorMap(ColorMap::Palette palette)
    update();
 }
 
-void SpectrumWidget::setGridLines(int count)
+void SpectrumWidget::setGridLines(int hCount, int vCount)
 {
-   _gridLines = count;
+   _numHorizontalGridLines = hCount;
+   _numVerticalGridLines = vCount;
    update();
 }
 
@@ -269,18 +270,17 @@ void SpectrumWidget::drawGrid(QPainter& painter, const QRect& area) const
    painter.setPen(QPen(QColor(60, 60, 70), 1, Qt::DotLine));
 
    // Horizontal grid lines (amplitude)
-   for (int i = 0; i <= _gridLines; ++i)
+   for (int i = 0; i <= _numHorizontalGridLines; ++i)
    {
-      const float frac = static_cast<float>(i) / static_cast<float>(_gridLines);
+      const float frac = static_cast<float>(i) / static_cast<float>(_numHorizontalGridLines);
       const int yPos = area.top() + static_cast<int>(frac * static_cast<float>(area.height()));
       painter.drawLine(area.left(), yPos, area.right(), yPos);
    }
 
    // Vertical grid lines (bins / frequency)
-   constexpr int V_LINES = 8;
-   for (int i = 0; i <= V_LINES; ++i)
+   for (int i = 0; i <= _numVerticalGridLines; ++i)
    {
-      const float frac = static_cast<float>(i) / static_cast<float>(V_LINES);
+      const float frac = static_cast<float>(i) / static_cast<float>(_numVerticalGridLines);
       const int xPos = area.left() + static_cast<int>(frac * static_cast<float>(area.width()));
       painter.drawLine(xPos, area.top(), xPos, area.bottom());
    }
@@ -464,9 +464,9 @@ void SpectrumWidget::drawLabels(QPainter& painter, const QRect& area) const
    painter.setFont(font);
 
    // Y-axis dB labels + tick marks
-   for (int i = 0; i <= _gridLines; ++i)
+   for (int i = 0; i <= _numHorizontalGridLines; ++i)
    {
-      const auto frac = static_cast<float>(i) / static_cast<float>(_gridLines);
+      const auto frac = static_cast<float>(i) / static_cast<float>(_numHorizontalGridLines);
       const auto db = static_cast<float>(_viewMaxDb -
                 (static_cast<double>(frac) * (_viewMaxDb - _viewMinDb)));
       const int yPos = area.top() + static_cast<int>(frac * static_cast<float>(area.height()));
@@ -486,13 +486,12 @@ void SpectrumWidget::drawLabels(QPainter& painter, const QRect& area) const
       return;
    }
 
-   constexpr int X_TICKS = 8;
    const bool hasFreq = (_bandwidthHz > 0.0);
    const double startFreq = _centerFreqHz - (_bandwidthHz / 2.0);
 
-   for (int i = 0; i <= X_TICKS; ++i)
+   for (int i = 0; i <= _numVerticalGridLines; ++i)
    {
-      const float frac = static_cast<float>(i) / static_cast<float>(X_TICKS);
+      const float frac = static_cast<float>(i) / static_cast<float>(_numVerticalGridLines);
       const int xPos = area.left() + static_cast<int>(frac * static_cast<float>(area.width()));
 
       // Tick mark on bottom edge of plot

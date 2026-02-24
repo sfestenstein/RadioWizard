@@ -74,6 +74,7 @@ MainWindow::MainWindow(QWidget* parent)
    _engine.setCenterFrequency(92'100'000);
    _engine.setSampleRate(2'400'000);
    _engine.setFftSize(65536);
+   onCenterFreqChanged(_engine.getCenterFrequencyMHz());
 
    _ui->_centerFreqSpinBox->setFrequencyMhz(92.1);
 
@@ -88,6 +89,7 @@ MainWindow::MainWindow(QWidget* parent)
    _ui->_waterfallWidget->setDbRange(-120.0F, 0.0F);
    _ui->_detailedSpectrumWidget->setInputIsDb(true);
    _ui->_detailedSpectrumWidget->setDbRange(-120.0F, 0.0F);
+   _ui->_detailedSpectrumWidget->setGridLines(6, 4);
 
    // Set up the Color Theme combo Box
    for (std::size_t i = 0; i < RealTimeGraphs::ColorMap::paletteCount(); ++i)
@@ -280,6 +282,12 @@ void MainWindow::onCenterFreqChanged(double valueMhz)
 {
    const auto hz = static_cast<uint64_t>(valueMhz * 1.0e6);
    _engine.setCenterFrequency(hz);
+   _ui->_spectrurmWidget->setFrequencyRange(
+       static_cast<double>(_engine.getCenterFrequency()),_engine.getSampleRate());
+   _ui->_waterfallWidget->setFrequencyRange(
+       static_cast<double>(_engine.getCenterFrequency()),_engine.getSampleRate());
+   _ui->_detailedSpectrumWidget->setFrequencyRange(
+       static_cast<double>(_engine.getCenterFrequency()),_engine.getSampleRate());
 }
 
 void MainWindow::onSampleRateChanged(int index)
@@ -598,16 +606,10 @@ void MainWindow::connectDataHandlers()
       {
          try
          {
-            _ui->_spectrurmWidget->setFrequencyRange(
-               specData->centerFreqHz, specData->bandwidthHz);
-            _ui->_spectrurmWidget->setData(specData->magnitudesDb);
-            _ui->_detailedSpectrumWidget->setFrequencyRange(
-               specData->centerFreqHz, specData->bandwidthHz);
-            _ui->_detailedSpectrumWidget->setData(specData->magnitudesDb);
 
-            _ui->_waterfallWidget->setFrequencyRange(
-               specData->centerFreqHz, specData->bandwidthHz);
+            _ui->_spectrurmWidget->setData(specData->magnitudesDb);
             _ui->_waterfallWidget->addRow(specData->magnitudesDb);
+            _ui->_detailedSpectrumWidget->setData(specData->magnitudesDb);
          }
          catch (std::exception &exception)
          {

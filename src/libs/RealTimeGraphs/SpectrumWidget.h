@@ -50,8 +50,8 @@ public:
    /** @brief Change the color palette. */
    void setColorMap(ColorMap::Palette palette);
 
-   /** @brief Set number of horizontal grid lines. */
-   void setGridLines(int count);
+   /** @brief Set number of horizontal and vertical grid lines. */
+   void setGridLines(int hCount, int vCount);
 
    /**
     * @brief Reset the view to show the full data range (both axes).
@@ -114,7 +114,8 @@ private:
    float _minDb{-120.0F};
    float _maxDb{0.0F};
    bool _inputIsDb{false};
-   int _gridLines{6};
+   int _numHorizontalGridLines{6};
+   int _numVerticalGridLines{6};
    bool _maxHoldEnabled{false};
    float _maxHoldDecayRate{10.0F};  ///< dB per second
 
