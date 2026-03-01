@@ -148,6 +148,24 @@ public:
    /** @brief Get the locked bandwidth cursor X data value. */
    [[nodiscard]] double lockedBandwidthCursorX() const { return _bwCursorLockedX; }
 
+   /** @brief Get the locked bandwidth cursor Y data value (noise floor). */
+   [[nodiscard]] std::optional<double> lockedBandwidthCursorY() const
+   {
+      return _bwCursorLockedY;
+   }
+
+   /**
+    * @brief Enable or disable the noise-floor horizontal line on the bandwidth cursor.
+    * Only meaningful for plots whose Y axis represents amplitude (e.g. SpectrumWidget).
+    */
+   void setBandwidthNoiseFloorEnabled(bool enabled);
+
+   /** @brief Whether the noise-floor horizontal line is enabled. */
+   [[nodiscard]] bool isBandwidthNoiseFloorEnabled() const
+   {
+      return _bwNoiseFloorEnabled;
+   }
+
    /** @brief Set or clear a linked bandwidth cursor lock from another widget. */
    void setLinkedBandwidthLock(double xData, double halfWidthFrac);
 
@@ -197,6 +215,9 @@ private:
    double _bwCursorHalfWidthFrac{0.0};
    bool _bwCursorLocked{false};
    double _bwCursorLockedX{0.0};
+   double _bwCursorLockedHalfWidth{0.0}; ///< half-width snapshot at lock time
+   std::optional<double> _bwCursorLockedY;  ///< Y (noise floor) snapshot at lock time
+   bool _bwNoiseFloorEnabled{false};
 
    // Linked bandwidth cursor lock from another widget
    bool _linkedBwLockActive{false};

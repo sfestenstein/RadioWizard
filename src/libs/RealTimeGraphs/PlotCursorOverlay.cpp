@@ -334,6 +334,7 @@ void PlotCursorOverlay::setBandwidthCursorEnabled(bool enabled)
    if (!enabled)
    {
       _bwCursorLocked = false;
+      _bwCursorLockedY.reset();
       _linkedBwLockActive = false;
    }
 }
@@ -351,20 +352,25 @@ bool PlotCursorOverlay::lockBandwidthCursor(const QPoint& pos,
       return false;
    }
    const auto data = _pixelToData(pos, plotArea);
-   _bwCursorLocked  = true;
-   _bwCursorLockedX = data.x;
+   _bwCursorLocked          = true;
+   _bwCursorLockedX         = data.x;
+   _bwCursorLockedHalfWidth = _bwCursorHalfWidthFrac;
+   _bwCursorLockedY         = data.y;
    return true;
 }
 
 void PlotCursorOverlay::lockBandwidthCursorAt(double xData)
 {
-   _bwCursorLocked  = true;
-   _bwCursorLockedX = xData;
+   _bwCursorLocked          = true;
+   _bwCursorLockedX         = xData;
+   _bwCursorLockedHalfWidth = _bwCursorHalfWidthFrac;
+   _bwCursorLockedY.reset(); // No Y info from peer sync
 }
 
 void PlotCursorOverlay::unlockBandwidthCursor()
 {
    _bwCursorLocked = false;
+   _bwCursorLockedY.reset();
 }
 
 void PlotCursorOverlay::setLinkedBandwidthLock(double xData,
@@ -380,6 +386,11 @@ void PlotCursorOverlay::clearLinkedBandwidthLock()
    _linkedBwLockActive = false;
 }
 
+void PlotCursorOverlay::setBandwidthNoiseFloorEnabled(bool enabled)
+{
+   _bwNoiseFloorEnabled = enabled;
+}
+
 void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
                                              const QRect& area) const
 {
@@ -390,6 +401,7 @@ void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
 
    auto drawBand = [&](double centerX,
                        double halfWidth,
+                       std::optional<double> noiseFloorY,
                        const QColor& bandColor,
                        const QColor& edgeColor,
                        Qt::PenStyle edgeStyle)
@@ -418,13 +430,45 @@ void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
       {
          painter.drawLine(rightPx.x(), area.top(), rightPx.x(), area.bottom());
       }
+
+      // Draw horizontal noise-floor line when enabled and Y is available.
+      if (_bwNoiseFloorEnabled && noiseFloorY.has_value())
+      {
+         const DataPoint nfPt{centerX, *noiseFloorY};
+         const QPoint nfPx = _dataToPixel(nfPt, area);
+         const int y = std::clamp(nfPx.y(), area.top(), area.bottom());
+
+         painter.setPen(QPen(edgeColor, 1, edgeStyle));
+         painter.drawLine(x1, y, x2, y);
+
+         // Draw a small dB label at the left edge of the band.
+         if (_formatY)
+         {
+            QFont font = painter.font();
+            font.setPointSize(9);
+            painter.setFont(font);
+
+            const QString label = _formatY(*noiseFloorY);
+            constexpr int LABEL_H = 14;
+            constexpr int LABEL_PAD = 3;
+            const QRect labelRect(x1 + LABEL_PAD, y - LABEL_H - 1,
+                                  x2 - x1 - (2 * LABEL_PAD), LABEL_H);
+            if (labelRect.width() > 30)
+            {
+               painter.setPen(edgeColor);
+               painter.drawText(labelRect,
+                                Qt::AlignLeft | Qt::AlignBottom, label);
+            }
+         }
+      }
    };
 
    // Draw selected (locked) band first so hover preview can be seen on top.
    if (_bwCursorLocked)
    {
       drawBand(_bwCursorLockedX,
-               _bwCursorHalfWidthFrac,
+               _bwCursorLockedHalfWidth,
+               _bwCursorLockedY,
                QColor(160, 160, 160, 60),
                QColor(190, 190, 190, 160),
                Qt::SolidLine);
@@ -433,6 +477,7 @@ void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
    {
       drawBand(_linkedBwLockX,
                _linkedBwLockHalfWidth,
+               std::nullopt,
                QColor(160, 160, 160, 60),
                QColor(190, 190, 190, 160),
                Qt::SolidLine);
@@ -444,17 +489,19 @@ void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
       const auto hoverData = _pixelToData(_cursorPos, area);
       drawBand(hoverData.x,
                _bwCursorHalfWidthFrac,
+               std::optional<double>(hoverData.y),
                QColor(160, 160, 160, 35),
-               QColor(180, 180, 180, 120),
-               Qt::DashLine);
+               QColor(0, 255, 0, 255),
+               Qt::SolidLine);
    }
    else if (!_bwCursorLocked && !_linkedBwLockActive && _linkedTrackingX.has_value())
    {
       drawBand(*_linkedTrackingX,
                _bwCursorHalfWidthFrac,
+               std::nullopt,
                QColor(160, 160, 160, 35),
-               QColor(180, 180, 180, 120),
-               Qt::DashLine);
+               QColor(0, 255, 0, 255),
+               Qt::SolidLine);
    }
 }
 

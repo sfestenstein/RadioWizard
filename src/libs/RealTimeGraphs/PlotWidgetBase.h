@@ -62,6 +62,9 @@ public slots:
    /** @brief Enable or disable bandwidth cursor mode. */
    void setBandwidthCursorEnabled(bool enabled);
 
+   /** @brief Enable or disable the noise-floor horizontal line on the bandwidth cursor. */
+   void setBandwidthNoiseFloorEnabled(bool enabled);
+
    /** @brief Set the bandwidth cursor half-width in Hz (for sync from peer widget). */
    void setBandwidthCursorHalfWidthHz(double hz);
 
@@ -96,6 +99,9 @@ signals:
 
    /** @brief Emitted when the bandwidth cursor is locked by a click. */
    void bandwidthCursorLocked(double xData);
+
+   /** @brief Emitted when the noise floor is selected (Y value at bandwidth cursor lock). */
+   void noiseFloorSelected(double noiseFloorDb);
 
    /** @brief Emitted when the bandwidth cursor is unlocked. */
    void bandwidthCursorUnlocked();

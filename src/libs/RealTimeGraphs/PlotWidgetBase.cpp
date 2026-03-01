@@ -113,6 +113,12 @@ void PlotWidgetBase::setBandwidthCursorEnabled(bool enabled)
    update();
 }
 
+void PlotWidgetBase::setBandwidthNoiseFloorEnabled(bool enabled)
+{
+   _cursorOverlay.setBandwidthNoiseFloorEnabled(enabled);
+   update();
+}
+
 void PlotWidgetBase::setBandwidthCursorHalfWidthHz(double hz)
 {
    _bwSelector.setHalfWidthHz(hz);
@@ -237,6 +243,12 @@ bool PlotWidgetBase::processBandwidthClick(const QPoint& pos)
    if (_cursorOverlay.lockBandwidthCursor(pos, area))
    {
       emit bandwidthCursorLocked(_cursorOverlay.lockedBandwidthCursorX());
+
+      const auto lockedY = _cursorOverlay.lockedBandwidthCursorY();
+      if (_cursorOverlay.isBandwidthNoiseFloorEnabled() && lockedY.has_value())
+      {
+         emit noiseFloorSelected(*lockedY);
+      }
    }
    update();
    return true;

@@ -70,6 +70,10 @@ SpectrumWidget::SpectrumWidget(QWidget* parent)
          const double dy = y1 - y2;
          return QString::fromUtf8("\u0394: ") + QString::number(dy, 'f', 1) + " dB";
       });
+
+   // Enable noise-floor horizontal line on the bandwidth cursor
+   // (the Y axis is dB in the spectrum widget).
+   _cursorOverlay.setBandwidthNoiseFloorEnabled(true);
 }
 
 // ============================================================================
@@ -537,7 +541,7 @@ void SpectrumWidget::wheelEvent(QWheelEvent* event)
    const bool inXMargin = (pos.y() > area.bottom() &&
                            pos.x() >= area.left() && pos.x() <= area.right());
 
-   if (!inYMargin && !inXMargin)
+   if (!inPlot && !inYMargin && !inXMargin)
    {
       QWidget::wheelEvent(event);
       return;

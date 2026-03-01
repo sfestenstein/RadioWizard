@@ -43,7 +43,7 @@ private:
    bool _enabled{false};
    double _halfWidthHz{100'000.0};
 
-   static constexpr double SCALE_FACTOR = 1.25;
+   static constexpr double SCALE_FACTOR = 1.15;
    static constexpr double MIN_HZ       = 1'000.0;
    static constexpr double MAX_HZ       = 5'000'000.0;
 };
