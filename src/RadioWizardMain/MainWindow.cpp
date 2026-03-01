@@ -4,6 +4,7 @@
 #include "Demodulator.h"
 #include "GeneralLogger.h"
 #include "RtlSdrDevice.h"
+#include "SdrCommonUtils.h"
 
 // Generated UI header
 #include "./ui_MainWindow.h"
@@ -606,10 +607,11 @@ void MainWindow::connectDataHandlers()
       {
          try
          {
-
-            _ui->_spectrurmWidget->setData(specData->magnitudesDb);
-            _ui->_waterfallWidget->addRow(specData->magnitudesDb);
-            _ui->_detailedSpectrumWidget->setData(specData->magnitudesDb);
+            const auto decimated =
+               SdrEngine::decimateSpectrum(specData->magnitudesDb);
+            _ui->_spectrurmWidget->setData(decimated);
+            _ui->_waterfallWidget->addRow(decimated);
+            _ui->_detailedSpectrumWidget->setData(decimated);
          }
          catch (std::exception &exception)
          {

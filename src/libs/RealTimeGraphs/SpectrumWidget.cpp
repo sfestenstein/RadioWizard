@@ -537,7 +537,7 @@ void SpectrumWidget::wheelEvent(QWheelEvent* event)
    const bool inXMargin = (pos.y() > area.bottom() &&
                            pos.x() >= area.left() && pos.x() <= area.right());
 
-   if (!inPlot && !inYMargin && !inXMargin)
+   if (!inYMargin && !inXMargin)
    {
       QWidget::wheelEvent(event);
       return;
