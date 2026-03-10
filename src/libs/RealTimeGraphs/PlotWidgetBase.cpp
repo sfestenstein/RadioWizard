@@ -221,9 +221,8 @@ bool PlotWidgetBase::processBandwidthWheel(int angleDelta)
    {
       return false;
    }
-   const double newHz = _bwSelector.adjustHalfWidth(-angleDelta);
+   _bwSelector.adjustHalfWidth(-angleDelta);
    syncBandwidthOverlay();
-   emit bandwidthCursorHalfWidthChanged(newHz);
    update();
    return true;
 }
@@ -249,6 +248,7 @@ bool PlotWidgetBase::processBandwidthClick(const QPoint& pos)
       {
          emit noiseFloorSelected(*lockedY);
       }
+      emit bandwidthCursorHalfWidthChanged(_bwSelector.halfWidthHz());
    }
    update();
    return true;

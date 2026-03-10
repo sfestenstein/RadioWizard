@@ -228,7 +228,7 @@ void StackTrace::writeStderr(const char* msg)
    // write() is async-signal-safe per POSIX.
    // We deliberately ignore the return value in a signal handler context.
    // NOLINTNEXTLINE(bugprone-unused-return-value,cert-err33-c)
-   (void)write(STDERR_FILENO, msg, strlen(msg));
+   [[maybe_unused]] auto returnValue = write(STDERR_FILENO, msg, strlen(msg));
 }
 
 } // namespace CommonUtils
