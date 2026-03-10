@@ -1,10 +1,12 @@
 #include "ConstellationWidget.h"
+#include "CommonGuiUtils.h"
 
 #include <QPainter>
 #include <QPaintEvent>
 #include <QWheelEvent>
 
 #include <algorithm>
+#include <numeric>
 
 namespace RealTimeGraphs
 {
@@ -27,64 +29,80 @@ ConstellationWidget::ConstellationWidget(QWidget* parent, int historySize)
 
 void ConstellationWidget::setData(const std::vector<std::complex<float>>& samples)
 {
+   constexpr std::size_t MAX_POINTS = 64;
+
+   // Build an index list sorted by descending magnitude so we keep the
+   // strongest samples.
+   std::vector<std::size_t> indices(samples.size());
+   std::iota(indices.begin(), indices.end(), 0);
+
+   const auto count = std::min(samples.size(), MAX_POINTS);
+   std::partial_sort(indices.begin(),
+                     indices.begin() + static_cast<std::ptrdiff_t>(count),
+                     indices.end(),
+                     [&samples](std::size_t a, std::size_t b)
+                     {
+                        return std::norm(samples[a]) > std::norm(samples[b]);
+                     });
+
    {
       const std::lock_guard<std::mutex> lock(_mutex);
       auto now = Clock::now();
-      for (const auto& s : samples)
+      for (std::size_t i = 0; i < count; ++i)
       {
-         _points.push({now, s});
+         _points.push({now, samples[indices[i]]});
       }
    }
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setAxisRange(float range)
 {
    _axisRange = range;
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setPointSize(int size)
 {
    _pointSize = size;
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setPersistence(bool enable)
 {
    _persistence = enable;
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setPersistenceDepth(int depth)
 {
    const std::lock_guard<std::mutex> lock(_mutex);
    _points = CommonUtils::CircularBuffer<TimedPoint>(static_cast<std::size_t>(depth));
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setDotColor(const QColor& color)
 {
    _dotColor = color;
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setGridEnabled(bool enable)
 {
    _gridEnabled = enable;
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setFadeAmount(int amount)
 {
    _fadeAmount = std::clamp(amount, 0, 255);
-   update();
+   safeUpdate(this);
 }
 
 void ConstellationWidget::setFadeTime(float seconds)
 {
    _fadeTimeSec = std::clamp(seconds, 0.5F, 30.0F);
-   update();
+   safeUpdate(this);
 }
 
 QSize ConstellationWidget::minimumSizeHint() const

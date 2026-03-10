@@ -1,5 +1,8 @@
 #include "CommonGuiUtils.h"
 
+#include <QMetaObject>
+#include <QWidget>
+
 #include <cmath>
 #include <format>
 
@@ -17,6 +20,11 @@ std::string formatFrequency(double freqHz)
    if (absFreq >= 1.0e3)
       return std::format("{:.3f} kHz", freqHz / 1.0e3);
    return std::format("{:.1f} Hz", freqHz);
+}
+
+void safeUpdate(QWidget* widget)
+{
+   QMetaObject::invokeMethod(widget, QOverload<>::of(&QWidget::update), Qt::AutoConnection);
 }
 
 } // namespace RealTimeGraphs

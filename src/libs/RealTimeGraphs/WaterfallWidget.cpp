@@ -133,7 +133,7 @@ void WaterfallWidget::addRow(const std::vector<float>& magnitudes)
       _rows.push(normRow);
       _timestamps.push(std::chrono::steady_clock::now());
    }
-   update();
+   safeUpdate(this);
 }
 
 void WaterfallWidget::setDbRange(float minDb, float maxDb)
@@ -141,20 +141,20 @@ void WaterfallWidget::setDbRange(float minDb, float maxDb)
    _minDb = minDb;
    _maxDb = maxDb;
    _colorBar->setDbRange(minDb, maxDb);
-   update();
+   safeUpdate(this);
 }
 
 void WaterfallWidget::setInputIsDb(bool isDb)
 {
    _inputIsDb = isDb;
-   update();
+   safeUpdate(this);
 }
 
 void WaterfallWidget::setColorMap(ColorMap::Palette palette)
 {
    _colorMap = ColorMap(palette);
    _colorBar->setColorMap(_colorMap);
-   update();
+   safeUpdate(this);
 }
 
 QRect WaterfallWidget::plotArea() const
@@ -167,7 +167,7 @@ QRect WaterfallWidget::plotArea() const
 void WaterfallWidget::setColorBarVisible(bool visible)
 {
    _colorBar->setVisible(visible);
-   update();
+   safeUpdate(this);
 }
 
 std::optional<std::pair<float, float>> WaterfallWidget::getAmplitudeRange() const
@@ -560,7 +560,7 @@ void WaterfallWidget::drawTimeLabels(QPainter& painter, const QRect& area) const
 
 std::string WaterfallWidget::formatAge(double seconds)
 {
-   if (seconds < 0.001)
+   if (seconds < 0.05)
    {
       return "now";
    }

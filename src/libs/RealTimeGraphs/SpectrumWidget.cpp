@@ -127,7 +127,7 @@ void SpectrumWidget::setData(const std::vector<float>& magnitudes)
          }
       }
    }
-   update(); // schedule repaint on the GUI thread
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setDbRange(float minDb, float maxDb)
@@ -137,27 +137,27 @@ void SpectrumWidget::setDbRange(float minDb, float maxDb)
    _viewMinDb = static_cast<double>(minDb);
    _viewMaxDb = static_cast<double>(maxDb);
    syncColorBar();
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setInputIsDb(bool isDb)
 {
    _inputIsDb = isDb;
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setColorMap(ColorMap::Palette palette)
 {
    _colorMap = ColorMap(palette);
    syncColorBar();
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setGridLines(int hCount, int vCount)
 {
    _numHorizontalGridLines = hCount;
    _numVerticalGridLines = vCount;
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::resetView()
@@ -168,13 +168,13 @@ void SpectrumWidget::resetView()
    _viewXEnd   = 1.0;
    syncColorBar();
    emit xViewChanged(_viewXStart, _viewXEnd);
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setColorBarVisible(bool visible)
 {
    _colorBar->setVisible(visible);
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setXAxisVisible(bool visible)
@@ -183,7 +183,7 @@ void SpectrumWidget::setXAxisVisible(bool visible)
    _cursorOverlay.setMargins(MARGIN_LEFT, MARGIN_RIGHT, MARGIN_TOP,
                              visible ? MARGIN_BOTTOM : MARGIN_BOTTOM_HIDDEN);
    _cursorOverlay.setShowXLabels(visible);
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setMaxHoldEnabled(bool enabled)
@@ -194,7 +194,7 @@ void SpectrumWidget::setMaxHoldEnabled(bool enabled)
       const std::lock_guard<std::mutex> lock(_mutex);
       _maxHoldData.clear();
    }
-   update();
+   safeUpdate(this);
 }
 
 void SpectrumWidget::setMaxHoldDecayRate(float dbPerSecond)

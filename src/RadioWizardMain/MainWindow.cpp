@@ -377,7 +377,18 @@ void MainWindow::onBwCursorToggled(bool checked)
       updateDemodButtonState();
 
       _engine.setChannelFilterEnabled(false);
-      switchToUnfilteredIq();
+
+      // Disconnect all IQ feeds and clear the constellation.
+      if (_filteredIqListenerId >= 0)
+      {
+         _engine.filteredIqDataHandler().unregisterListener(_filteredIqListenerId);
+         _filteredIqListenerId = -1;
+      }
+      if (_iqListenerId >= 0)
+      {
+         _engine.iqDataHandler().unregisterListener(_iqListenerId);
+         _iqListenerId = -1;
+      }
    }
 }
 
@@ -426,8 +437,18 @@ void MainWindow::onBwCursorUnlocked()
    stopDemod();
    updateDemodButtonState();
 
-   // Switch constellation back to unfiltered IQ data.
-   switchToUnfilteredIq();
+   // Disconnect all IQ feeds and clear the constellation.
+   // The plot is not useful without a locked bandwidth selection.
+   if (_filteredIqListenerId >= 0)
+   {
+      _engine.filteredIqDataHandler().unregisterListener(_filteredIqListenerId);
+      _filteredIqListenerId = -1;
+   }
+   if (_iqListenerId >= 0)
+   {
+      _engine.iqDataHandler().unregisterListener(_iqListenerId);
+      _iqListenerId = -1;
+   }
 }
 
 void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
@@ -623,9 +644,6 @@ void MainWindow::connectDataHandlers()
          }
       });
 
-   // --- I/Q data will be wired dynamically based on filter state ---
-   // Start with unfiltered data.
-   switchToUnfilteredIq();
 }
 
 void MainWindow::disconnectDataHandlers()
@@ -665,10 +683,7 @@ void MainWindow::switchToUnfilteredIq()
       _iqListenerId = _engine.iqDataHandler().registerListener(
          [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
          {
-            QMetaObject::invokeMethod(this, [this, iqData]()
-            {
-               _ui->_constellationWidget->setData(iqData->samples);
-            });
+            _ui->_constellationWidget->setData(iqData->samples);
          });
       GPINFO("Switched constellation to unfiltered I/Q data");
    }
@@ -689,10 +704,7 @@ void MainWindow::switchToFilteredIq()
       _filteredIqListenerId = _engine.filteredIqDataHandler().registerListener(
          [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
          {
-            QMetaObject::invokeMethod(this, [this, iqData]()
-            {
-               _ui->_constellationWidget->setData(iqData->samples);
-            });
+            _ui->_constellationWidget->setData(iqData->samples);
          });
       GPINFO("Switched constellation to filtered I/Q data");
    }
