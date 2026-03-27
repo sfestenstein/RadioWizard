@@ -779,7 +779,7 @@ void MainWindow::refreshDevices()
 
    // Scan RTL-SDR devices.
    {
-      SdrEngine::RtlSdrDevice probe;
+      const SdrEngine::RtlSdrDevice probe;
       for (auto& info : probe.enumerateDevices())
       {
          DetectedDevice entry;
@@ -791,7 +791,7 @@ void MainWindow::refreshDevices()
 
    // Scan ADALM-PLUTO devices.
    {
-      SdrEngine::PlutoSdrDevice probe;
+      const SdrEngine::PlutoSdrDevice probe;
       for (auto& info : probe.enumerateDevices())
       {
          DetectedDevice entry;

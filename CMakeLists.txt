@@ -132,7 +132,6 @@ endif()
 # Find Conan-generated package files
 find_package(spdlog REQUIRED)
 find_package(protobuf REQUIRED)
-find_package(cppzmq REQUIRED)
 
 # FFTW3 — Fast Fourier Transform
 find_package(FFTW3 REQUIRED)

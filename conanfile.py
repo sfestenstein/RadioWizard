@@ -43,22 +43,6 @@ class RadioWizardConan(ConanFile):
       # Protocol Buffers
       self.requires("protobuf/5.27.0")
 
-      # ZeroMQ messaging
-      self.requires("zeromq/4.3.5")
-      self.requires("cppzmq/4.10.0")
-
-      # Zyre (ZeroMQ Realtime Exchange) and dependencies
-      self.requires("czmq/4.2.1")
-      self.requires("zyre/2.0.1")
-
-      # zyre/2.0.1 on Linux/FreeBSD unconditionally depends on libsystemd/255.
-      # libsystemd/255 (base) can fail to build against newer kernel headers.
-      # Override to a newer 255.x patch release that includes the updated magic list.
-      if self.settings.os in ["Linux", "FreeBSD"]:
-         self.requires("libsystemd/255.10", override=True)
-
-
-
       # FFT
       self.requires("fftw/3.3.10")
 
@@ -77,10 +61,6 @@ class RadioWizardConan(ConanFile):
       # Handle fPIC for shared libraries
       if self.options.shared:
          self.options.rm_safe("fPIC")
-
-      # Disable systemd integration in czmq (option name in ConanCenter recipe is `with_systemd`).
-      # Note: zyre/2.0.1 still depends on libsystemd on Linux/FreeBSD regardless; see override above.
-      self.options["czmq/*"].with_systemd = False
 
       # Qt 6 options — enable only the modules we need
       self.options["qt/*"].shared = True     # Qt must be shared

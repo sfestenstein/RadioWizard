@@ -11,7 +11,6 @@ A C++20 application for Software Defined Radio (SDR) control, spectrum and I/Q d
 - **Signal Demodulation**: Demodulate isolated signals using configurable demodulation chains
 - **VITA 49.2 Support**: Encode and decode VITA 49.2 signal data and context packets for interoperability
 - **Real-Time Visualization**: Qt 6 widgets for spectrum, waterfall/spectrogram, and IQ constellation displays
-- **Distributed Architecture**: Publish/subscribe messaging via Zyre (peer-to-peer) and UDP multicast for high-bandwidth data streams
 - **Protocol Buffers** for structured command/control and telemetry serialization
 - **Modern C++20** with CMake 3.25+, Conan 2.0, Google Test, spdlog, sanitizers, and CI/CD
 
@@ -96,19 +95,6 @@ cmake --build --preset coverage --target CommonUtilsCoverage
 # Main RadioWizard application (Qt GUI with SDR engine)
 ./build/debug/bin/RadioWizardMain
 
-# Zyre-based pub/sub (peer-to-peer discovery)
-./build/debug/bin/ZyreSubscriber  # In terminal 1
-./build/debug/bin/ZyrePublisher   # In terminal 2
-
-# (Optional) Bind to a specific network interface.
-# You can pass either an interface name (recommended) or a local IP on that interface.
-#   - Linux examples:  ./build/debug/bin/ZyreSubscriber wlp2s0
-#                     ./build/debug/bin/ZyrePublisher  192.168.1.130
-#   - macOS examples:  ./build/debug/bin/ZyreSubscriber en0
-#                     ./build/debug/bin/ZyrePublisher  192.168.1.42
-# Note: Zyre discovery uses LAN beacons; both machines must be on the same LAN/subnet
-# and firewalls/VPNs/guest Wi-Fi isolation can block peer discovery.
-
 # High-bandwidth UDP multicast pub/sub
 ./build/debug/bin/HighBandwidthSubscriber  # In terminal 1
 ./build/debug/bin/HighBandwidthPublisher   # In terminal 2
@@ -126,7 +112,7 @@ RadioWizard/
 │   ├── TestApps/             # Test/demo executables
 │   └── libs/
 │       ├── CommonUtils/      # Common utilities (logging, timers, buffers)
-│       ├── PubSub/           # Publish-Subscribe messaging (Zyre + UDP multicast)
+│       ├── PubSub/           # High-bandwidth UDP multicast messaging
 │       ├── SdrEngine/        # SDR device abstraction + DSP pipeline
 │       ├── RealTimeGraphs/   # Qt 6 real-time visualization widgets
 │       ├── Vita49_2/         # VITA 49.2 signal data packet library
@@ -203,10 +189,6 @@ Managed by Conan 2.0:
 |---------|---------|---------|
 | spdlog | 1.15.0 | Logging |
 | protobuf | 5.27.0 | Serialization |
-| zeromq | 4.3.5 | Low-level messaging |
-| cppzmq | 4.10.0 | C++ ZeroMQ bindings |
-| czmq | 4.2.1 | High-level C ZeroMQ binding |
-| zyre | 2.0.1 | Peer-to-peer discovery |
 | fftw | 3.3.10 | Fast Fourier Transform (SdrEngine) |
 | liquid-dsp | 1.6.0 | DSP primitives — filters, NCO, resampling (SdrEngine) |
 | qt | 6.10.1 | GUI widgets (RealTimeGraphs, RadioWizardMain) |

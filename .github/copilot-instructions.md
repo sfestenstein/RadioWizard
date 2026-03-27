@@ -9,7 +9,7 @@ RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spe
 - **Package Manager**: Conan 2.0
 - **Compiler**: GCC 13+ or Clang 15+ (Linux/macOS)
 - **Testing**: Google Test
-- **Dependencies**: spdlog, protobuf, ZeroMQ (cppzmq), CZMQ, Zyre, Qt 6, FFTW3, liquid-dsp, librtlsdr (system)
+- **Dependencies**: spdlog, protobuf, Qt 6, FFTW3, liquid-dsp, librtlsdr (system), libiio (system), libad9361 (system)
 
 ## Project Structure
 
@@ -20,7 +20,7 @@ RadioWizard/
 │   ├── TestApps/             # Test/demo executables
 │   └── libs/
 │       ├── CommonUtils/      # Common utilities (logging, timers, buffers)
-│       ├── PubSub/           # Publish-Subscribe messaging (Zyre + UDP multicast)
+│       ├── PubSub/           # High-bandwidth UDP multicast messaging
 │       ├── SdrEngine/        # SDR device abstraction + DSP pipeline
 │       ├── RealTimeGraphs/   # Qt 6 real-time visualization widgets
 │       ├── Vita49_2/         # VITA 49.2 signal data packet library
@@ -154,9 +154,6 @@ When suggesting code, these libraries are available:
 |---------|---------|------------------|
 | spdlog | `<spdlog/spdlog.h>` | `spdlog::info()` or `CommonUtils::GeneralLogger` |
 | protobuf | `"message.pb.h"` | `messages::MessageType` |
-| ZeroMQ | `<zmq.hpp>` | `zmq::context_t`, `zmq::socket_t` |
-| CZMQ | `<czmq.h>` | `zsock_t`, `zactor_t` |
-| Zyre | `<zyre.h>` | `zyre_t` |
 | Qt 6 | `<QWidget>`, `<QPainter>` | `Qt6::Core`, `Qt6::Gui`, `Qt6::Widgets`, `Qt6::OpenGLWidgets` |
 | FFTW3 | `<fftw3.h>` | `fftw_plan`, `fftw_execute()` |
 | liquid-dsp | `<liquid/liquid.h>` | `firfilt_crcf`, `nco_crcf`, etc. |

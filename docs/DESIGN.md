@@ -4,7 +4,7 @@ This document describes the architecture and design decisions of the RadioWizard
 
 ## Overview
 
-RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spectrum and I/Q data observation, signal isolation, and signal demodulation. It interfaces with SDR hardware to capture RF data, visualizes signals in real time, and provides a distributed processing architecture for streaming high-bandwidth I/Q samples between components.
+RadioWizard is a C++20 application for Software Defined Radio (SDR) control, spectrum and I/Q data observation, signal isolation, and signal demodulation. It interfaces with SDR hardware to capture RF data and visualizes signals in real time.
 
 ## Architecture
 
@@ -18,20 +18,19 @@ graph TD
 
    subgraph Libraries
       SdrEngine["<b>SdrEngine</b><br/>ISdrDevice, RtlSdrDevice,<br/>FftProcessor, ChannelFilter,<br/>SdrEngine, SdrTypes"]
-      PubSub["<b>PubSub</b><br/>ZyreNode, ZyrePublisher,<br/>ZyreSubscriber,<br/>HighBandwidthPublisher,<br/>HighBandwidthSubscriber"]
+      PubSub["<b>PubSub</b><br/>HighBandwidthPublisher,<br/>HighBandwidthSubscriber"]
       RTG["<b>RealTimeGraphs</b><br/>PlotWidgetBase, SpectrumWidget,<br/>WaterfallWidget, ConstellationWidget,<br/>ColorMap, ColorBarWidget,<br/>BandwidthSelector, PlotCursorOverlay"]
       Vita49["<b>Vita49_2</b><br/>PacketHeader, SignalDataPacket,<br/>ContextPacket, Vita49Codec,<br/>Vita49Types, ByteSwap"]
       PL["<b>ProtoLib</b><br/>protobuf messages"]
       CU["<b>CommonUtils</b><br/>GeneralLogger, Timer,<br/>SnoozableTimer, CircularBuffer,<br/>DataHandler"]
 
-      %% Force 2-row × 3-column layout
+      %% Force layout
       SdrEngine ~~~ Vita49
       PubSub ~~~ PL
       RTG ~~~ CU
    end
 
    subgraph TestApps["Test / Demo Applications"]
-      ZP["<b>Zyre Pub/Sub</b><br/>Peer-to-peer messaging"]
       HB["<b>HighBandwidth Pub/Sub</b><br/>UDP Multicast"]
       RTT["<b>RealTimeGraphsTest</b>"]
       V49A["<b>Vita49 Apps</b><br/>FileCodec, PerfBenchmark,<br/>RoundTripTest"]
@@ -41,16 +40,14 @@ graph TD
       spdlog
       protobuf
       Qt6["Qt 6"]
-      ZeroMQ["ZeroMQ, cppzmq,<br/>CZMQ, Zyre"]
       FFTW3["FFTW3, liquid-dsp,<br/>librtlsdr"]
    end
 
    %% Invisible edges to enforce vertical ordering
    RWM ~~~ SdrEngine
-   Vita49 ~~~ ZP
-   PL ~~~ HB
-   CU ~~~ RTT
-   ZP ~~~ spdlog
+   Vita49 ~~~ RTT
+   CU ~~~ V49A
+   RTT ~~~ spdlog
 ```
 
 ### Libraries
@@ -88,26 +85,7 @@ The CommonUtils library provides reusable components for common tasks:
 
 #### PubSub Library (`src/libs/PubSub/`)
 
-The PubSub library provides two messaging patterns:
-
-**Zyre-based Messaging** (peer-to-peer discovery):
-
-- **ZyreNode**: Base class for Zyre nodes:
-  - Automatic peer discovery via UDP beaconing
-  - Node lifecycle management (start/stop)
-  - Thread-safe operation
-
-- **ZyrePublisher**: Publishes messages via Zyre:
-  - Inherits from ZyreNode
-  - Publishes protobuf messages to topics
-  - Automatic peer discovery
-
-- **ZyreSubscriber**: Subscribes to messages via Zyre:
-  - Inherits from ZyreNode
-  - Topic-based subscription with callbacks
-  - Background receive thread
-
-**High-Bandwidth Messaging** (UDP multicast):
+The PubSub library provides high-bandwidth UDP multicast messaging:
 
 - **HighBandwidthPublisher**: Fast UDP multicast publisher:
   - Raw UDP multicast for minimal overhead
@@ -212,22 +190,6 @@ The main Qt application:
 - Hosts the SdrEngine controls, spectrum/waterfall display, and constellation diagram
 - Links to RealTimeGraphs, SdrEngine, and CommonUtils
 - Uses Qt Designer `.ui` form for layout
-
-#### ZyrePublisher (`src/TestApps/ZyrePublisherTest.cpp`)
-
-Demonstrates:
-- Zyre peer-to-peer publishing
-- Protocol buffer serialization (SensorReading, SensorDataBatch, Command)
-- Periodic message publishing
-- GeneralLogger usage
-
-#### ZyreSubscriber (`src/TestApps/ZyreSubscriberTest.cpp`)
-
-Demonstrates:
-- Zyre peer-to-peer subscription
-- Protocol buffer deserialization
-- Topic-based message handling
-- Formatted logging with spdlog
 
 #### HighBandwidthPublisher (`src/TestApps/HighBandwidthPublisherTester.cpp`)
 

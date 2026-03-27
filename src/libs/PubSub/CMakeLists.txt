@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.20)
 
 project(PubSubLib CXX)
 
-find_package(czmq REQUIRED)
-find_package(zyre REQUIRED)
-find_package(ZeroMQ REQUIRED)
-
 file(GLOB SOURCES     "*.cpp")
 file(GLOB HEADERS     "*.h")
 
@@ -16,9 +12,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    czmq-static
-    zyre-static
-    libzmq-static
     CommonUtils
     protobuf::libprotobuf
 )

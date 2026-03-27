@@ -203,15 +203,6 @@ int myFunction(int param1, std::string_view param2);
 5. Tests are auto-discovered via `file(GLOB)` in `tests/CommonUtilsTests/CMakeLists.txt`
 6. Re-run CMake configure to pick up new files
 
-### Adding a New PubSub Class
-
-1. Create header: `src/libs/PubSub/NewClass.h`
-2. Create source: `src/libs/PubSub/NewClass.cpp`
-3. Files are auto-discovered via `file(GLOB)` in `src/libs/PubSub/CMakeLists.txt`
-4. Create test: `tests/PubSubTests/NewClassUt.cpp`
-5. Tests are auto-discovered via `file(GLOB)` in `tests/PubSubTests/CMakeLists.txt`
-6. Re-run CMake configure to pick up new files
-
 ### Adding a New Proto File
 
 1. Create proto: `src/libs/proto/proto-messages/new_message.proto`
@@ -255,7 +246,7 @@ int myFunction(int param1, std::string_view param2);
 
    target_link_libraries(new_app
       PRIVATE
-         PubSubLib
+         CommonUtils
          ProtoLib
          # other dependencies
    )

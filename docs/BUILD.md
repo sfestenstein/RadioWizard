@@ -173,10 +173,6 @@ After building:
 # Main RadioWizard application (Qt GUI with SDR engine)
 ./build/debug/bin/RadioWizardMain
 
-# Zyre-based pub/sub (peer-to-peer discovery)
-./build/debug/bin/ZyreSubscriber   # In terminal 1
-./build/debug/bin/ZyrePublisher    # In terminal 2
-
 # High-bandwidth UDP multicast pub/sub
 ./build/debug/bin/HighBandwidthSubscriber   # In terminal 1
 ./build/debug/bin/HighBandwidthPublisher    # In terminal 2
@@ -190,11 +186,7 @@ After building:
 ./build/debug/bin/Vita49RoundTripTest
 ```
 
-For the Zyre pub/sub, you should see sensor data messages being published every second and received by the subscriber.
-
 ## Troubleshooting
-
-### Conan Can't Find Package
 
 ```bash
 # Update Conan remote index

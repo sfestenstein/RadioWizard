@@ -2,19 +2,6 @@
 # Applications - CMakeLists.txt
 # =============================================================================
 
-# Zyre Publisher executable
-add_executable(ZyrePublisher  ZyrePublisherTest.cpp)
-
-target_link_libraries(ZyrePublisher
-   PRIVATE PubSubLib ProtoLib
-)
-
-# Zyre Subscriber executable
-add_executable(ZyreSubscriber ZyreSubscriberTest.cpp)
-
-target_link_libraries(ZyreSubscriber
-   PRIVATE PubSubLib ProtoLib )
-
 # High-Bandwidth Subscriber executable
 add_executable(HighBandwidthSubscriber HighBandwidthSubscriberTester.cpp)
 
@@ -58,7 +45,7 @@ set_target_properties(RealTimeGraphsTest PROPERTIES
 
 # Set properties
 set(APP_TARGETS
-   ZyrePublisher ZyreSubscriber HighBandwidthSubscriber HighBandwidthPublisher
+   HighBandwidthSubscriber HighBandwidthPublisher
    Vita49RoundTripTest Vita49PerfBenchmark Vita49FileCodec RealTimeGraphsTest
 )
 

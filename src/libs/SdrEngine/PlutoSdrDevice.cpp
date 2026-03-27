@@ -71,7 +71,7 @@ bool PlutoSdrDevice::open(int deviceIndex)
       const char* uri  = iio_context_info_get_uri(infoList[i]);
       if (desc != nullptr && uri != nullptr)
       {
-         std::string descStr(desc);
+         const std::string descStr(desc);
          if (descStr.find("PlutoSDR") != std::string::npos ||
              descStr.find("ADALM-PLUTO") != std::string::npos)
          {
@@ -512,7 +512,7 @@ std::vector<DeviceInfo> PlutoSdrDevice::enumerateDevices() const
       {
          continue;
       }
-      std::string descStr(desc);
+      const std::string descStr(desc);
       if (descStr.find("PlutoSDR") == std::string::npos &&
           descStr.find("ADALM-PLUTO") == std::string::npos)
       {
