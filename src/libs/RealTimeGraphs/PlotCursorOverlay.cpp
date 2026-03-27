@@ -342,6 +342,12 @@ void PlotCursorOverlay::setBandwidthCursorEnabled(bool enabled)
 void PlotCursorOverlay::setBandwidthCursorHalfWidth(double dataFrac)
 {
    _bwCursorHalfWidthFrac = dataFrac;
+
+   // Keep the locked band visual in sync when bandwidth changes while locked.
+   if (_bwCursorLocked)
+   {
+      _bwCursorLockedHalfWidth = dataFrac;
+   }
 }
 
 bool PlotCursorOverlay::lockBandwidthCursor(const QPoint& pos,
@@ -459,6 +465,35 @@ void PlotCursorOverlay::drawBandwidthCursor(QPainter& painter,
                painter.drawText(labelRect,
                                 Qt::AlignLeft | Qt::AlignBottom, label);
             }
+         }
+      }
+
+      // Draw center frequency and bandwidth labels at the top of the band.
+      {
+         QFont font = painter.font();
+         font.setPointSize(9);
+         painter.setFont(font);
+         painter.setPen(edgeColor);
+
+         constexpr int LINE_H = 14;
+         constexpr int PAD = 3;
+         const int bandWidth = x2 - x1;
+         int labelY = area.top() + PAD;
+
+         if (_formatX && bandWidth > 60)
+         {
+            const QString cfLabel = _formatX(centerX);
+            const QRect cfRect(x1 + PAD, labelY, bandWidth - (2 * PAD), LINE_H);
+            painter.drawText(cfRect, Qt::AlignHCenter | Qt::AlignTop, cfLabel);
+            labelY += LINE_H;
+         }
+
+         if (_formatBandwidth && bandWidth > 60)
+         {
+            const QString bwLabel =
+               "BW: " + _formatBandwidth(halfWidth);
+            const QRect bwRect(x1 + PAD, labelY, bandWidth - (2 * PAD), LINE_H);
+            painter.drawText(bwRect, Qt::AlignHCenter | Qt::AlignTop, bwLabel);
          }
       }
    };

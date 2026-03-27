@@ -102,6 +102,10 @@ private:
    // Apply the combo-box selection: create the right device and inject it.
    void applyDeviceSelection(int comboIndex);
 
+   // Extract the BW-cursor region from the cached spectrum, decimate, and
+   // send to the detailed spectrum widget with a relative-offset X-axis.
+   void updateDetailedSpectrum();
+
    // Identifies which backend + hardware index a combo entry refers to.
    enum class DeviceBackend : uint8_t { RtlSdr, PlutoSdr };
    struct DetectedDevice
@@ -123,6 +127,9 @@ private:
    // Cached bandwidth cursor state for channel filter configuration.
    double _bwCursorHalfWidthHz{100'000.0};
    double _bwCursorLockedX{0.5};
+
+   // Last full spectrum data, cached for extracting the cursor region.
+   std::shared_ptr<const SdrEngine::SpectrumData> _lastSpectrumData;
 
    // Demodulation and audio output.
    SdrEngine::Demodulator _demod;

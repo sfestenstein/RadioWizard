@@ -20,6 +20,7 @@
 #include <QSlider>
 
 // System headers
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -30,10 +31,10 @@ namespace
 {
 
 /// Sample rates matching the combo-box order in the .ui file.
-constexpr size_t NUM_SAMPLE_RATES = 12;
+constexpr size_t NUM_SAMPLE_RATES = 13;
 constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES = {
     250'000, 1'024'000, 1'400'000, 1'800'000, 2'048'000, 2'400'000, 2'800'000, 3'200'000,
-    6'000'000, 10'000'000, 15'000'000, 20'000'000};
+    6'000'000, 8'000'000,10'000'000, 15'000'000, 20'000'000};
 
 constexpr size_t NUM_FFT_SIZES = 8;
 constexpr std::array<size_t, NUM_FFT_SIZES> FFT_SIZES = {2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144};
@@ -321,13 +322,18 @@ void MainWindow::onCenterFreqChanged(double valueMhz)
        static_cast<double>(_engine.getCenterFrequency()),_engine.getSampleRate());
    _ui->_waterfallWidget->setFrequencyRange(
        static_cast<double>(_engine.getCenterFrequency()),_engine.getSampleRate());
-   _ui->_detailedSpectrumWidget->setFrequencyRange(
-       static_cast<double>(_engine.getCenterFrequency()),_engine.getSampleRate());
 }
 
 void MainWindow::onSampleRateChanged(int index)
 {
    _engine.setSampleRate(sampleRateFromIndex(index));
+
+   // Update the plot widgets so their frequency range (and thus the bandwidth
+   // cursor visual width) reflects the new sample rate.
+   const auto center = static_cast<double>(_engine.getCenterFrequency());
+   const auto bw     = static_cast<double>(_engine.getSampleRate());
+   _ui->_spectrurmWidget->setFrequencyRange(center, bw);
+   _ui->_waterfallWidget->setFrequencyRange(center, bw);
 }
 
 void MainWindow::onAutoGainToggled(bool checked)
@@ -412,6 +418,9 @@ void MainWindow::onBwCursorToggled(bool checked)
 
       _engine.setChannelFilterEnabled(false);
 
+      // Clear the detailed spectrum widget.
+      _ui->_detailedSpectrumWidget->setData({});
+
       // Disconnect all IQ feeds and clear the constellation.
       if (_filteredIqListenerId >= 0)
       {
@@ -449,6 +458,13 @@ void MainWindow::onBwCursorLocked(double xData)
    // Switch constellation to display filtered IQ data.
    switchToFilteredIq();
 
+   // Configure the detailed spectrum widget for the cursor region.
+   _ui->_detailedSpectrumWidget->setFrequencyRange(0.0, bwHz);
+   if (_lastSpectrumData)
+   {
+      updateDetailedSpectrum();
+   }
+
    updateDemodButtonState();
 
    // If demod is active, reconfigure for new channel.
@@ -462,6 +478,9 @@ void MainWindow::onBwCursorUnlocked()
 {
    _bwCursorLocked = false;
    _engine.setChannelFilterEnabled(false);
+
+   // Clear the detailed spectrum widget.
+   _ui->_detailedSpectrumWidget->setData({});
 
    // Stop demod if active.
    if (_ui->_demodButton->isChecked())
@@ -504,6 +523,13 @@ void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
       const double maxFreqHz = channelCenterHz + (bwHz / 2.0);
 
       _engine.configureChannelFilterFromMinMax(minFreqHz, maxFreqHz);
+
+      // Update the detailed spectrum widget's frequency range and data.
+      _ui->_detailedSpectrumWidget->setFrequencyRange(0.0, halfWidthHz * 2.0);
+      if (_lastSpectrumData)
+      {
+         updateDetailedSpectrum();
+      }
 
       // Reconfigure demod if active (bandwidth changed).
       if (_ui->_demodButton->isChecked())
@@ -666,7 +692,13 @@ void MainWindow::connectDataHandlers()
                SdrEngine::decimateSpectrum(specData->magnitudesDb);
             _ui->_spectrurmWidget->setData(decimated);
             _ui->_waterfallWidget->addRow(decimated);
-            _ui->_detailedSpectrumWidget->setData(decimated);
+
+            // Cache the full spectrum for the detailed widget.
+            _lastSpectrumData = specData;
+            if (_bwCursorLocked)
+            {
+               updateDetailedSpectrum();
+            }
          }
          catch (std::exception &exception)
          {
@@ -742,6 +774,53 @@ void MainWindow::switchToFilteredIq()
          });
       GPINFO("Switched constellation to filtered I/Q data");
    }
+}
+
+// ============================================================================
+// Detailed spectrum (BW-cursor zoom)
+// ============================================================================
+void MainWindow::updateDetailedSpectrum()
+{
+   if (!_lastSpectrumData || !_bwCursorLocked)
+   {
+      return;
+   }
+
+   const auto& bins = _lastSpectrumData->magnitudesDb;
+   const auto totalBins = bins.size();
+   if (totalBins == 0)
+   {
+      return;
+   }
+
+   // The cursor position is a [0, 1] fraction of the bandwidth.
+   // Convert to a bin index range.  Use the spectrum data's own bandwidth
+   // so the extraction is always consistent with the cached FFT frame.
+   const double sampleRate = _lastSpectrumData->bandwidthHz;
+   const double hzPerBin = sampleRate / static_cast<double>(totalBins);
+
+   const double cursorCenterBin =
+      _bwCursorLockedX * static_cast<double>(totalBins);
+   const double halfWidthBins = _bwCursorHalfWidthHz / hzPerBin;
+
+   auto startBin = static_cast<size_t>(
+      std::max(0.0, cursorCenterBin - halfWidthBins));
+   auto endBin = static_cast<size_t>(
+      std::min(static_cast<double>(totalBins),
+               cursorCenterBin + halfWidthBins));
+
+   if (endBin <= startBin)
+   {
+      return;
+   }
+
+   // Extract only the bins within the cursor region.
+   const std::vector<float> region(bins.begin() + static_cast<ptrdiff_t>(startBin),
+                                   bins.begin() + static_cast<ptrdiff_t>(endBin));
+
+   // Decimate the extracted region for display.
+   const auto decimated = SdrEngine::decimateSpectrum(region);
+   _ui->_detailedSpectrumWidget->setData(decimated);
 }
 
 // ============================================================================

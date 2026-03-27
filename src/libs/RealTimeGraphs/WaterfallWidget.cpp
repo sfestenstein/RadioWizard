@@ -111,6 +111,17 @@ WaterfallWidget::WaterfallWidget(QWidget* parent, int historyRows)
          return QString::fromUtf8("\u0394t: ") + sign
               + QString::fromStdString(formatAge(std::abs(deltaSec)));
       });
+
+   _cursorOverlay.setFormatBandwidth(
+      [this](double halfWidthFrac) -> QString
+      {
+         if (_bandwidthHz > 0.0)
+         {
+            const double bwHz = halfWidthFrac * 2.0 * _bandwidthHz;
+            return QString::fromStdString(formatFrequency(bwHz));
+         }
+         return QString::number(halfWidthFrac * 2.0, 'f', 4);
+      });
 }
 
 // ============================================================================

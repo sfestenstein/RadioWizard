@@ -60,6 +60,9 @@ public:
    /** @brief Callback that formats the delta between two Y data values. */
    using FormatDeltaYFn = std::function<QString(double y1, double y2)>;
 
+   /** @brief Callback that formats a data-space half-width as a bandwidth string. */
+   using FormatBandwidthFn = std::function<QString(double halfWidthFrac)>;
+
    PlotCursorOverlay() = default;
 
    /** @brief Configure the coordinate conversion callbacks. */
@@ -69,6 +72,7 @@ public:
    void setFormatY(FormatYFn fn) { _formatY = std::move(fn); }
    void setFormatDeltaX(FormatDeltaXFn fn) { _formatDeltaX = std::move(fn); }
    void setFormatDeltaY(FormatDeltaYFn fn) { _formatDeltaY = std::move(fn); }
+   void setFormatBandwidth(FormatBandwidthFn fn) { _formatBandwidth = std::move(fn); }
 
    /** @brief Set the layout margins so axis labels are positioned correctly. */
    void setMargins(int left, int right, int top, int bottom);
@@ -191,6 +195,7 @@ private:
    FormatYFn _formatY;
    FormatDeltaXFn _formatDeltaX;
    FormatDeltaYFn _formatDeltaY;
+   FormatBandwidthFn _formatBandwidth;
 
    // Margins
    int _marginLeft{55};

@@ -223,6 +223,7 @@ bool PlotWidgetBase::processBandwidthWheel(int angleDelta)
    }
    _bwSelector.adjustHalfWidth(-angleDelta);
    syncBandwidthOverlay();
+   emit bandwidthCursorHalfWidthChanged(_bwSelector.halfWidthHz());
    update();
    return true;
 }
