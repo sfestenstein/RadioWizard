@@ -276,8 +276,7 @@ void SpectrumWidget::paintEvent(QPaintEvent* /*event*/)
 
 void SpectrumWidget::drawBackground(QPainter& painter, const QRect& area) const
 {
-   painter.fillRect(rect(), QColor(25, 25, 30));
-   painter.fillRect(area, QColor(15, 15, 20));
+   PlotUtils::drawPlotBackground(painter, this, area);
 }
 
 void SpectrumWidget::drawGrid(QPainter& painter, const QRect& area) const
@@ -473,10 +472,7 @@ void SpectrumWidget::drawFps(QPainter& painter, const QRect& area) const
 
 void SpectrumWidget::drawLabels(QPainter& painter, const QRect& area) const
 {
-   painter.setPen(QColor(180, 180, 190));
-   QFont font = painter.font();
-   font.setPointSize(10);
-   painter.setFont(font);
+   PlotUtils::setupTickLabelPainter(painter);
 
    // Y-axis dB labels + tick marks
    for (int i = 0; i <= _numHorizontalGridLines; ++i)
@@ -486,13 +482,8 @@ void SpectrumWidget::drawLabels(QPainter& painter, const QRect& area) const
                 (static_cast<double>(frac) * (_viewMaxDb - _viewMinDb)));
       const int yPos = area.top() + static_cast<int>(frac * static_cast<float>(area.height()));
 
-      // Tick mark on left edge of plot
-      painter.setPen(QColor(180, 180, 190));
-      painter.drawLine(area.left() - TICK_LENGTH, yPos, area.left(), yPos);
-
       const QString label = QString::number(static_cast<int>(db)) + " dB";
-      painter.drawText(0, yPos - 6, MARGIN_LEFT - TICK_LENGTH - 2, 12,
-                       Qt::AlignRight | Qt::AlignVCenter, label);
+      PlotUtils::drawYTick(painter, area, MARGIN_LEFT, yPos, label);
    }
 
    // X-axis: frequency tick labels + tick marks
@@ -509,10 +500,6 @@ void SpectrumWidget::drawLabels(QPainter& painter, const QRect& area) const
       const float frac = static_cast<float>(i) / static_cast<float>(_numVerticalGridLines);
       const int xPos = area.left() + static_cast<int>(frac * static_cast<float>(area.width()));
 
-      // Tick mark on bottom edge of plot
-      painter.setPen(QColor(180, 180, 190));
-      painter.drawLine(xPos, area.bottom(), xPos, area.bottom() + TICK_LENGTH);
-
       QString label;
       if (hasFreq)
       {
@@ -528,12 +515,7 @@ void SpectrumWidget::drawLabels(QPainter& painter, const QRect& area) const
          label = QString::number(dataFrac, 'f', 2);
       }
 
-      // Centre the label on the tick position
-      constexpr int LABEL_WIDTH = 80;
-      const int labelTop = area.bottom() + TICK_LENGTH + 3;
-      painter.drawText(xPos - (LABEL_WIDTH / 2), labelTop,
-                       LABEL_WIDTH, MARGIN_BOTTOM - TICK_LENGTH - 6,
-                       Qt::AlignCenter, label);
+      PlotUtils::drawXTick(painter, area, MARGIN_BOTTOM, xPos, label);
    }
 }
 

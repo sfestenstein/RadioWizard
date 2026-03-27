@@ -1,39 +1,14 @@
-#include "CommonGuiUtils.h"
+#include "PlotPainterUtils.h"
 
-#include <QMetaObject>
 #include <QPainter>
 #include <QWidget>
 
-#include <cmath>
-#include <format>
-
-namespace RealTimeGraphs
-{
-
-std::string formatFrequency(double freqHz)
-{
-   const double absFreq = std::abs(freqHz);
-
-   if (absFreq >= 1.0e9)
-      return std::format("{:.3f} GHz", freqHz / 1.0e9);
-   if (absFreq >= 1.0e6)
-      return std::format("{:.3f} MHz", freqHz / 1.0e6);
-   if (absFreq >= 1.0e3)
-      return std::format("{:.3f} kHz", freqHz / 1.0e3);
-   return std::format("{:.1f} Hz", freqHz);
-}
-
-void safeUpdate(QWidget* widget)
-{
-   QMetaObject::invokeMethod(widget, QOverload<>::of(&QWidget::update), Qt::AutoConnection);
-}
-
-namespace PlotUtils
+namespace RealTimeGraphs::PlotPainterUtils
 {
 
 // Shared palette constants (kept consistent across all plot widgets).
-static constexpr auto OUTER_BG  = QColor(25, 25, 30);
-static constexpr auto PLOT_BG   = QColor(15, 15, 20);
+static constexpr auto OUTER_BG = QColor(25, 25, 30);
+static constexpr auto PLOT_BG  = QColor(15, 15, 20);
 static constexpr auto GRID_CLR  = QColor(60, 60, 70);
 static constexpr auto ZERO_CLR  = QColor(80, 80, 90);
 static constexpr auto LABEL_CLR = QColor(180, 180, 190);
@@ -112,5 +87,4 @@ void drawXTick(QPainter& painter, const QRect& plotArea,
                     Qt::AlignCenter, label);
 }
 
-} // namespace PlotUtils
-} // namespace RealTimeGraphs
+} // namespace RealTimeGraphs::PlotPainterUtils

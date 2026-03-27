@@ -338,7 +338,7 @@
              </widget>
             </item>
             <item row="1" column="0" colspan="2">
-             <widget class="FrequencyInputWidget" name="_centerFreqSpinBox"/>
+             <widget class="FrequencyInputWidget" name="_centerFreqSpinBox" native="true"/>
             </item>
            </layout>
           </widget>
@@ -361,7 +361,7 @@
          <widget class="RealTimeGraphs::SpectrumWidget" name="_detailedSpectrumWidget" native="true"/>
         </item>
         <item>
-         <widget class="QWidget" name="widget_9" native="true"/>
+         <widget class="RealTimeGraphs::OscilloscopeWidget" name="_oscilloscopeWidget" native="true"/>
         </item>
        </layout>
       </widget>
@@ -375,7 +375,7 @@
      <x>0</x>
      <y>0</y>
      <width>1400</width>
-     <height>33</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>
@@ -397,6 +397,12 @@
    <class>RealTimeGraphs::ConstellationWidget</class>
    <extends>QWidget</extends>
    <header>ConstellationWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>RealTimeGraphs::OscilloscopeWidget</class>
+   <extends>QWidget</extends>
+   <header>OscilloscopeWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

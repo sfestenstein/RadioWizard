@@ -131,29 +131,12 @@ void ConstellationWidget::paintEvent(QPaintEvent* /*event*/)
    const int yOffset = MARGIN_TOP + ((height() - MARGIN_TOP - MARGIN_BOTTOM - side) / 2);
    const QRect plotArea(xOffset, yOffset, side, side);
 
-   drawBackground(painter, plotArea);
+   PlotUtils::drawPlotBackground(painter, this, plotArea);
    if (_gridEnabled)
    {
       drawGrid(painter, plotArea);
    }
    drawPoints(painter, plotArea);
-
-   // Axis labels
-   painter.setPen(QColor(180, 180, 190));
-   QFont font = painter.font();
-   font.setPointSize(10);
-   painter.setFont(font);
-
-   painter.drawText(plotArea.left(), plotArea.bottom() + 5,
-                    plotArea.width(), MARGIN_BOTTOM - 5,
-                    Qt::AlignCenter, "In-Phase (I)");
-
-   painter.save();
-   painter.translate(12, plotArea.center().y());
-   painter.rotate(-90);
-   painter.drawText(-plotArea.height() / 2, 0, plotArea.height(), 15,
-                    Qt::AlignCenter, "Quadrature (Q)");
-   painter.restore();
 }
 
 void ConstellationWidget::wheelEvent(QWheelEvent* event)
@@ -182,14 +165,13 @@ void ConstellationWidget::wheelEvent(QWheelEvent* event)
 
 void ConstellationWidget::drawBackground(QPainter& painter, const QRect& area)
 {
-   painter.fillRect(rect(), QColor(25, 25, 30));
-   painter.fillRect(area, QColor(10, 10, 15));
+   PlotUtils::drawPlotBackground(painter, this, area);
 }
 
 void ConstellationWidget::drawGrid(QPainter& painter, const QRect& area)
 {
    // Draw concentric circles at 0.25, 0.5, 0.75, 1.0 of axis range
-   painter.setPen(QPen(QColor(50, 50, 60), 1, Qt::DotLine));
+   painter.setPen(QPen(QColor(60, 60, 70), 1, Qt::DotLine));
 
    const QPoint centre = area.center();
 
@@ -202,15 +184,12 @@ void ConstellationWidget::drawGrid(QPainter& painter, const QRect& area)
    }
 
    // Draw cross-hairs (axes)
-   painter.setPen(QPen(QColor(70, 70, 80), 1, Qt::SolidLine));
+   painter.setPen(QPen(QColor(80, 80, 90), 1, Qt::SolidLine));
    painter.drawLine(area.left(), centre.y(), area.right(), centre.y());
    painter.drawLine(centre.x(), area.top(), centre.x(), area.bottom());
 
    // Draw axis tick labels
-   painter.setPen(QColor(140, 140, 150));
-   QFont font = painter.font();
-   font.setPointSize(10);
-   painter.setFont(font);
+   PlotUtils::setupTickLabelPainter(painter);
 
    for (int i = -2; i <= 2; ++i)
    {

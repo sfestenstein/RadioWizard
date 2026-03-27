@@ -94,6 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
    _engine.setCenterFrequency(92'100'000);
    _engine.setSampleRate(2'400'000);
    _engine.setFftSize(65536);
+   _ui->_oscilloscopeWidget->setSampleRate(2'400'000);
    onCenterFreqChanged(_engine.getCenterFrequencyMHz());
 
    _ui->_centerFreqSpinBox->setFrequencyMhz(92.1);
@@ -334,6 +335,7 @@ void MainWindow::onSampleRateChanged(int index)
    const auto bw     = static_cast<double>(_engine.getSampleRate());
    _ui->_spectrurmWidget->setFrequencyRange(center, bw);
    _ui->_waterfallWidget->setFrequencyRange(center, bw);
+   _ui->_oscilloscopeWidget->setSampleRate(static_cast<double>(_engine.getSampleRate()));
 }
 
 void MainWindow::onAutoGainToggled(bool checked)
@@ -710,6 +712,8 @@ void MainWindow::connectDataHandlers()
          }
       });
 
+   // --- I/Q data → ConstellationWidget + OscilloscopeWidget ---
+   switchToUnfilteredIq();
 }
 
 void MainWindow::disconnectDataHandlers()
@@ -750,9 +754,13 @@ void MainWindow::switchToUnfilteredIq()
          [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
          {
             _ui->_constellationWidget->setData(iqData->samples);
+            _ui->_oscilloscopeWidget->setData(iqData->samples);
          });
-      GPINFO("Switched constellation to unfiltered I/Q data");
+      GPINFO("Switched constellation + oscilloscope to unfiltered I/Q data");
    }
+
+   _ui->_oscilloscopeWidget->setSampleRate(
+      static_cast<double>(_engine.getSampleRate()));
 }
 
 void MainWindow::switchToFilteredIq()
@@ -771,8 +779,15 @@ void MainWindow::switchToFilteredIq()
          [this](const std::shared_ptr<const SdrEngine::IqBuffer>& iqData)
          {
             _ui->_constellationWidget->setData(iqData->samples);
+            _ui->_oscilloscopeWidget->setData(iqData->samples);
          });
-      GPINFO("Switched constellation to filtered I/Q data");
+      GPINFO("Switched constellation + oscilloscope to filtered I/Q data");
+   }
+
+   const double channelRate = _engine.channelFilter().getOutputSampleRate();
+   if (channelRate > 0.0)
+   {
+      _ui->_oscilloscopeWidget->setSampleRate(channelRate);
    }
 }
 

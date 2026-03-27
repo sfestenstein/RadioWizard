@@ -1,22 +1,13 @@
-#ifndef COMMONGUIUTILS_H_
-#define COMMONGUIUTILS_H_
+#ifndef PLOTPAINTERUTILS_H_
+#define PLOTPAINTERUTILS_H_
 
 class QPainter;
 class QRect;
 class QString;
 class QWidget;
 
-// System headers
-#include <string>
-
 namespace RealTimeGraphs
 {
-
-/** @brief Convert a frequency in Hz to a human-readable string (Hz/kHz/MHz/GHz). */
-[[nodiscard]] std::string formatFrequency(double freqHz);
-
-/** @brief Safely trigger a QWidget update from any thread. */
-void safeUpdate(QWidget* widget);
 
 /**
  * @brief Shared low-level drawing helpers for all plot widgets.
@@ -25,7 +16,7 @@ void safeUpdate(QWidget* widget);
  * drawing that is duplicated across SpectrumWidget, OscilloscopeWidget,
  * and ConstellationWidget.
  */
-namespace PlotUtils
+namespace PlotPainterUtils
 {
 
 /// Tick-mark length in pixels, shared by all plot widgets.
@@ -78,7 +69,7 @@ void drawYTick(QPainter& painter, const QRect& plotArea,
 void drawXTick(QPainter& painter, const QRect& plotArea,
                int bottomMargin, int xPos, const QString& label);
 
-} // namespace PlotUtils
+} // namespace PlotPainterUtils
 } // namespace RealTimeGraphs
 
-#endif // COMMONGUIUTILS_H_
+#endif // PLOTPAINTERUTILS_H_

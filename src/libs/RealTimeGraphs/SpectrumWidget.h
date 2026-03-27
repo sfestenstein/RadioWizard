@@ -140,7 +140,6 @@ private:
 
    // Spectrum-specific layout constants
    static constexpr int MARGIN_BOTTOM_HIDDEN = 2;
-   static constexpr int TICK_LENGTH   = 5;
 
    bool _xAxisVisible{true};
 
