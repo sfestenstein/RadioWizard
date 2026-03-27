@@ -142,10 +142,16 @@ message(STATUS "Found FFTW3")
 find_package(liquid-dsp REQUIRED)
 message(STATUS "Found liquid-dsp")
 
-# RTL-SDR — system dependency (not available via Conan)
+# System dependencies (not available via Conan)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(RTLSDR REQUIRED IMPORTED_TARGET librtlsdr)
 message(STATUS "Found librtlsdr: ${RTLSDR_VERSION}")
+
+pkg_check_modules(LIBIIO REQUIRED IMPORTED_TARGET libiio)
+message(STATUS "Found libiio: ${LIBIIO_VERSION}")
+
+pkg_check_modules(LIBAD9361 REQUIRED IMPORTED_TARGET libad9361)
+message(STATUS "Found libad9361: ${LIBAD9361_VERSION}")
 
 # Conan CMakeDeps generates Qt6Config.cmake which:
 #  1. Creates component targets (Qt6::Core, Qt6::Gui, Qt6::Widgets, …)

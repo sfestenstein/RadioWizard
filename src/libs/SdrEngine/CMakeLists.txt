@@ -28,4 +28,6 @@ target_link_libraries(${LIB_NAME}
       FFTW3::fftw3f
       liquid-dsp::liquid-dsp
       PkgConfig::RTLSDR
+      PkgConfig::LIBIIO
+      PkgConfig::LIBAD9361
 )

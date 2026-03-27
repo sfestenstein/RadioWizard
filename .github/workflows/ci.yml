@@ -38,6 +38,8 @@ jobs:
             python3-pip \
             lcov \
             librtlsdr-dev \
+            libiio-dev \
+            libad9361-dev \
             libgl-dev \
             xkb-data
 
@@ -102,7 +104,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          brew install cmake ninja protobuf librtlsdr
+          brew install cmake ninja protobuf librtlsdr libiio libad9361
 
       - name: Install Conan
         run: |

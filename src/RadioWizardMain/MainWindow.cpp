@@ -3,6 +3,7 @@
 #include "AudioOutput.h"
 #include "Demodulator.h"
 #include "GeneralLogger.h"
+#include "PlutoSdrDevice.h"
 #include "RtlSdrDevice.h"
 #include "SdrCommonUtils.h"
 
@@ -12,6 +13,8 @@
 // Third-party headers
 #include <QCheckBox>
 #include <QComboBox>
+#include <QGridLayout>
+#include <QLabel>
 #include <QMetaObject>
 #include <QPushButton>
 #include <QSlider>
@@ -27,18 +30,10 @@ namespace
 {
 
 /// Sample rates matching the combo-box order in the .ui file.
-constexpr size_t NUM_SAMPLE_RATES = 8;
-constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES =
-{
-   250'000,
-   1'024'000,
-   1'400'000,
-   1'800'000,
-   2'048'000,
-   2'400'000,
-   2'800'000,
-   3'200'000,
-};
+constexpr size_t NUM_SAMPLE_RATES = 12;
+constexpr std::array<uint32_t, NUM_SAMPLE_RATES> SAMPLE_RATES = {
+    250'000, 1'024'000, 1'400'000, 1'800'000, 2'048'000, 2'400'000, 2'800'000, 3'200'000,
+    6'000'000, 10'000'000, 15'000'000, 20'000'000};
 
 constexpr size_t NUM_FFT_SIZES = 8;
 constexpr std::array<size_t, NUM_FFT_SIZES> FFT_SIZES = {2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144};
@@ -55,8 +50,31 @@ MainWindow::MainWindow(QWidget* parent)
 {
    _ui->setupUi(this);
 
-   // Inject an RTL-SDR device into the engine.
-   _engine.setDevice(std::make_unique<SdrEngine::RtlSdrDevice>());
+   // Add a device selector + refresh button into the control panel grid.
+   auto* gridLayout = _ui->_startStopButton->parentWidget()
+                          ->findChild<QGridLayout*>("gridLayout");
+   if (gridLayout != nullptr)
+   {
+      auto* deviceLabel = new QLabel("Device", this);
+      _deviceCombo = new QComboBox(this);
+      _deviceCombo->setSizeAdjustPolicy(
+         QComboBox::AdjustToMinimumContentsLengthWithIcon);
+      _deviceCombo->setMinimumContentsLength(12);
+      _refreshDevicesBtn = new QPushButton("Refresh", this);
+      _refreshDevicesBtn->setToolTip("Re-scan for connected SDR devices");
+
+      gridLayout->addWidget(deviceLabel, 2, 0);
+      gridLayout->addWidget(_deviceCombo, 3, 0, 1, 2);
+      gridLayout->addWidget(_refreshDevicesBtn, 2, 1);
+
+      connect(_deviceCombo, &QComboBox::currentIndexChanged, this,
+              [this](int index) { applyDeviceSelection(index); });
+      connect(_refreshDevicesBtn, &QPushButton::clicked, this,
+              [this]() { refreshDevices(); });
+   }
+
+   // Auto-detect connected devices and select the first one.
+   refreshDevices();
 
    // Populate sample rate combo box.
    for (const auto sampleRate : SAMPLE_RATES)
@@ -229,6 +247,14 @@ void MainWindow::onStartStopToggled(bool checked)
       if (_engine.start())
       {
          _ui->_startStopButton->setText("Stop");
+         if (_deviceCombo != nullptr)
+         {
+            _deviceCombo->setEnabled(false);
+         }
+         if (_refreshDevicesBtn != nullptr)
+         {
+            _refreshDevicesBtn->setEnabled(false);
+         }
       }
       else
       {
@@ -249,6 +275,14 @@ void MainWindow::onStartStopToggled(bool checked)
 
       disconnectDataHandlers();
       _ui->_startStopButton->setText("Start");
+      if (_deviceCombo != nullptr)
+      {
+         _deviceCombo->setEnabled(true);
+      }
+      if (_refreshDevicesBtn != nullptr)
+      {
+         _refreshDevicesBtn->setEnabled(true);
+      }
    }
 }
 
@@ -720,4 +754,111 @@ uint32_t MainWindow::sampleRateFromIndex(int index)
       return SAMPLE_RATES[static_cast<size_t>(index)];
    }
    return 2'400'000;
+}
+
+// ============================================================================
+// Device auto-detection
+// ============================================================================
+
+void MainWindow::refreshDevices()
+{
+   if (_engine.isRunning())
+   {
+      return;
+   }
+   if (_deviceCombo == nullptr)
+   {
+      return;
+   }
+
+   // Block signals while repopulating so we don't trigger applyDeviceSelection
+   // for every intermediate state.
+   _deviceCombo->blockSignals(true);
+   _deviceCombo->clear();
+   _detectedDevices.clear();
+
+   // Scan RTL-SDR devices.
+   {
+      SdrEngine::RtlSdrDevice probe;
+      for (auto& info : probe.enumerateDevices())
+      {
+         DetectedDevice entry;
+         entry.backend = DeviceBackend::RtlSdr;
+         entry.info    = std::move(info);
+         _detectedDevices.push_back(std::move(entry));
+      }
+   }
+
+   // Scan ADALM-PLUTO devices.
+   {
+      SdrEngine::PlutoSdrDevice probe;
+      for (auto& info : probe.enumerateDevices())
+      {
+         DetectedDevice entry;
+         entry.backend = DeviceBackend::PlutoSdr;
+         entry.info    = std::move(info);
+         _detectedDevices.push_back(std::move(entry));
+      }
+   }
+
+   // Populate the combo box.
+   for (const auto& dev : _detectedDevices)
+   {
+      QString label;
+      if (dev.backend == DeviceBackend::RtlSdr)
+      {
+         label = QString("RTL-SDR: %1")
+                    .arg(QString::fromStdString(dev.info.name));
+      }
+      else
+      {
+         label = QString("Pluto: %1")
+                    .arg(QString::fromStdString(dev.info.name));
+      }
+      if (!dev.info.serial.empty())
+      {
+         label += QString(" [%1]").arg(
+            QString::fromStdString(dev.info.serial));
+      }
+      _deviceCombo->addItem(label);
+   }
+
+   if (_detectedDevices.empty())
+   {
+      _deviceCombo->addItem("(no devices found)");
+   }
+
+   _deviceCombo->blockSignals(false);
+
+   // Auto-select the first device.
+   if (!_detectedDevices.empty())
+   {
+      _deviceCombo->setCurrentIndex(0);
+      applyDeviceSelection(0);
+   }
+
+   GPINFO("Device scan found {} device(s)", _detectedDevices.size());
+}
+
+void MainWindow::applyDeviceSelection(int comboIndex)
+{
+   if (_engine.isRunning())
+   {
+      return;
+   }
+   if (comboIndex < 0 ||
+       static_cast<std::size_t>(comboIndex) >= _detectedDevices.size())
+   {
+      return;
+   }
+
+   const auto& dev = _detectedDevices[static_cast<std::size_t>(comboIndex)];
+   if (dev.backend == DeviceBackend::RtlSdr)
+   {
+      _engine.setDevice(std::make_unique<SdrEngine::RtlSdrDevice>());
+   }
+   else
+   {
+      _engine.setDevice(std::make_unique<SdrEngine::PlutoSdrDevice>());
+   }
 }

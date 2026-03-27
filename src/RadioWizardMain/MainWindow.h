@@ -5,12 +5,17 @@
 #include "AudioOutput.h"
 #include "Demodulator.h"
 #include "SdrEngine.h"
+#include "SdrTypes.h"
 
 // Third-party headers
 #include <QMainWindow>
 
 // System headers
 #include <memory>
+#include <vector>
+
+class QComboBox;
+class QPushButton;
 
 QT_BEGIN_NAMESPACE
 
@@ -91,7 +96,24 @@ private:
    // Map the sample-rate combo index to Hz.
    static uint32_t sampleRateFromIndex(int index);
 
+   // Scan all device backends and populate the device combo box.
+   void refreshDevices();
+
+   // Apply the combo-box selection: create the right device and inject it.
+   void applyDeviceSelection(int comboIndex);
+
+   // Identifies which backend + hardware index a combo entry refers to.
+   enum class DeviceBackend : uint8_t { RtlSdr, PlutoSdr };
+   struct DetectedDevice
+   {
+      DeviceBackend backend;
+      SdrEngine::DeviceInfo info;
+   };
+
    Ui::MainWindow* _ui;
+   QComboBox* _deviceCombo{nullptr};
+   QPushButton* _refreshDevicesBtn{nullptr};
+   std::vector<DetectedDevice> _detectedDevices;
    SdrEngine::SdrEngine _engine;
 
    int _spectrumListenerId{-1};
