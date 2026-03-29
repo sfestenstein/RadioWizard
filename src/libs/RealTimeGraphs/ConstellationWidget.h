@@ -74,6 +74,12 @@ public:
     */
    void setFadeTime(float seconds);
 
+   /** @brief Pause or resume live data updates. */
+   void setPaused(bool paused);
+
+   /** @brief Returns true if the display is currently paused. */
+   [[nodiscard]] bool isPaused() const;
+
    /** @brief Minimum size hint for layout. */
    [[nodiscard]] QSize minimumSizeHint() const override;
 
@@ -94,6 +100,7 @@ private:
    using TimedPoint = std::pair<TimePoint, std::complex<float>>;
 
    std::mutex _mutex;
+   bool _paused{false};
    CommonUtils::CircularBuffer<TimedPoint> _points;
 
    float _axisRange{1.5F};

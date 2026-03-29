@@ -93,6 +93,10 @@ SpectrumWidget::SpectrumWidget(QWidget* parent)
 
 void SpectrumWidget::setData(const std::vector<float>& magnitudes)
 {
+   if (_paused)
+   {
+      return;
+   }
    {
       const std::lock_guard<std::mutex> lock(_mutex);
       _data = magnitudes;
@@ -211,6 +215,17 @@ void SpectrumWidget::setMaxHoldEnabled(bool enabled)
 void SpectrumWidget::setMaxHoldDecayRate(float dbPerSecond)
 {
    _maxHoldDecayRate = dbPerSecond;
+}
+
+void SpectrumWidget::setPaused(bool paused)
+{
+   _paused = paused;
+   safeUpdate(this);
+}
+
+bool SpectrumWidget::isPaused() const
+{
+   return _paused;
 }
 
 QRect SpectrumWidget::plotArea() const

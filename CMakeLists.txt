@@ -218,6 +218,7 @@ if(BUILD_TESTS)
    add_subdirectory(tests/PubSubTests)
    add_subdirectory(tests/Vita49_2Tests)
    add_subdirectory(tests/SdrEngineTests)
+   add_subdirectory(tests/RealTimeGraphsTests)
 endif()
 
 # =============================================================================

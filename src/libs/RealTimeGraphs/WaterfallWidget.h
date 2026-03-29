@@ -2,7 +2,6 @@
 #define WATERFALLWIDGET_H_
 
 // Project headers
-#include "CircularBuffer.h"
 #include "PlotWidgetBase.h"
 #include "ColorMap.h"
 
@@ -11,6 +10,7 @@
 
 // System headers
 #include <chrono>
+#include <deque>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -37,10 +37,10 @@ class WaterfallWidget : public PlotWidgetBase
 
 public:
    /**
-    * @param historyRows  Number of time rows to keep in history.
-    * @param parent       Parent widget.
+    * @param parent     Parent widget.
+    * @param maxAgeSec  Maximum age (in seconds) of rows to keep in history.
     */
-   explicit WaterfallWidget(QWidget* parent = nullptr, int historyRows = 256);
+   explicit WaterfallWidget(QWidget* parent = nullptr, double maxAgeSec = 20.0);
 
    /**
     * @brief Append a new spectrum row.  The vector is copied.
@@ -60,6 +60,9 @@ public:
 
    /** @brief Show or hide the built-in color-bar legend. */
    void setColorBarVisible(bool visible);
+
+   /** @brief Set the maximum age (in seconds) of rows to keep. */
+   void setMaxAge(double seconds);
 
    /**
     * @brief Get the minimum and maximum amplitude values (in dB) from all rows in history.
@@ -96,16 +99,19 @@ private:
    // Convert a linear magnitude to normalised [0, 1] within the dB range.
    [[nodiscard]] float toNormalised(float value) const;
 
+   // Prune rows from the front of _rows/_timestamps that are older than _maxAgeSec.
+   void pruneOldRows();
+
    mutable std::mutex _mutex;
 
-   int _historyRows;
+   double _maxAgeSec;
    int _binCount{0};
 
    /** @brief Each element is a spectrum row (vector of normalised values). */
-   CommonUtils::CircularBuffer<std::vector<float>> _rows;
+   std::deque<std::vector<float>> _rows;
 
    /** @brief Timestamp for each row (parallel to _rows). */
-   CommonUtils::CircularBuffer<std::chrono::steady_clock::time_point> _timestamps;
+   std::deque<std::chrono::steady_clock::time_point> _timestamps;
 
    /** @brief Off-screen rendered spectrogram image. */
    QImage _image;

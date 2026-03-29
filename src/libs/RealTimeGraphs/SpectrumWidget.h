@@ -75,6 +75,12 @@ public:
    /** @brief Set the decay rate for max hold (dB per second).  Default is 10 dB/s. */
    void setMaxHoldDecayRate(float dbPerSecond);
 
+   /** @brief Pause or resume live data updates. */
+   void setPaused(bool paused);
+
+   /** @brief Returns true if the display is currently paused. */
+   [[nodiscard]] bool isPaused() const;
+
 signals:
    /** @brief Emitted when the spectrum color-bar dB range changes. */
    void dbRangeChanged(float minDb, float maxDb);
@@ -107,6 +113,7 @@ private:
    void syncColorBar();
 
    mutable std::mutex _mutex;
+   bool _paused{false};
    std::vector<float> _data;
    std::vector<float> _maxHoldData;  ///< Per-bin max-hold values (in same units as _data)
 

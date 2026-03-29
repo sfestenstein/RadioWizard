@@ -224,6 +224,20 @@ MainWindow::MainWindow(QWidget* parent)
    connect(_ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::dbRangeChanged,
            _ui->_waterfallWidget, &RealTimeGraphs::WaterfallWidget::setDbRange);
 
+   // Oscilloscope trigger → pause/unpause peer widgets
+   connect(_ui->_oscilloscopeWidget, &RealTimeGraphs::OscilloscopeWidget::triggerFired,
+           this, [this]()
+           {
+              _ui->_constellationWidget->setPaused(true);
+              _ui->_detailedSpectrumWidget->setPaused(true);
+           });
+   connect(_ui->_oscilloscopeWidget, &RealTimeGraphs::OscilloscopeWidget::triggerDisarmed,
+           this, [this]()
+           {
+              _ui->_constellationWidget->setPaused(false);
+              _ui->_detailedSpectrumWidget->setPaused(false);
+           });
+
 }
 
 MainWindow::~MainWindow()

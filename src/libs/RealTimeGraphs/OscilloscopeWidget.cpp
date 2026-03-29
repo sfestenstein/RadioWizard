@@ -3,9 +3,11 @@
 
 #include <QPainter>
 #include <QPaintEvent>
+#include <QResizeEvent>
 #include <QWheelEvent>
 
 #include <algorithm>
+#include <cmath>
 
 namespace RealTimeGraphs
 {
@@ -19,6 +21,33 @@ OscilloscopeWidget::OscilloscopeWidget(QWidget* parent)
 {
    setMinimumSize(OscilloscopeWidget::minimumSizeHint());
    setAttribute(Qt::WA_OpaquePaintEvent);
+
+   _pauseButton = new QPushButton(QStringLiteral("\u23F8"), this);
+   _pauseButton->setToolTip("Pause/Resume");
+   _pauseButton->setFixedSize(28, 28);
+   _pauseButton->setFocusPolicy(Qt::NoFocus);
+   _pauseButton->setStyleSheet(
+      "QPushButton { background: rgba(30,30,40,180); color: #cccccc;"
+      " border: 1px solid #555; border-radius: 4px; font-size: 14px; }"
+      "QPushButton:hover { background: rgba(60,60,80,200); }"
+      "QPushButton:checked { color: #ff6644; }");
+   _pauseButton->setCheckable(true);
+   connect(_pauseButton, &QPushButton::toggled, this,
+           &OscilloscopeWidget::setPaused);
+
+   _triggerButton = new QPushButton(QStringLiteral("T"), this);
+   _triggerButton->setToolTip("Trigger: pause when signal exceeds threshold");
+   _triggerButton->setFixedSize(28, 28);
+   _triggerButton->setFocusPolicy(Qt::NoFocus);
+   _triggerButton->setStyleSheet(
+      "QPushButton { background: rgba(30,30,40,180); color: #cccccc;"
+      " border: 1px solid #555; border-radius: 4px; font-size: 12px;"
+      " font-weight: bold; }"
+      "QPushButton:hover { background: rgba(60,60,80,200); }"
+      "QPushButton:checked { color: #44ff44; border-color: #44ff44; }");
+   _triggerButton->setCheckable(true);
+   connect(_triggerButton, &QPushButton::toggled, this,
+           &OscilloscopeWidget::setTriggerEnabled);
 }
 
 // ============================================================================
@@ -27,6 +56,10 @@ OscilloscopeWidget::OscilloscopeWidget(QWidget* parent)
 
 void OscilloscopeWidget::setData(const std::vector<std::complex<float>>& samples)
 {
+   if (_paused)
+   {
+      return;
+   }
    {
       const std::lock_guard<std::mutex> lock(_mutex);
 
@@ -42,6 +75,14 @@ void OscilloscopeWidget::setData(const std::vector<std::complex<float>>& samples
                          samples.end());
       }
    }
+
+   // Trigger check: if armed, test whether any sample exceeds the threshold.
+   if (_triggerEnabled && checkTrigger())
+   {
+      setPaused(true);
+      emit triggerFired();
+   }
+
    safeUpdate(this);
 }
 
@@ -81,6 +122,74 @@ void OscilloscopeWidget::setGridEnabled(bool enable)
    safeUpdate(this);
 }
 
+void OscilloscopeWidget::setPaused(bool paused)
+{
+   _paused = paused;
+   if (_pauseButton->isChecked() != paused)
+   {
+      _pauseButton->setChecked(paused);
+   }
+   _pauseButton->setText(paused ? QStringLiteral("\u25B6")
+                                : QStringLiteral("\u23F8"));
+
+   // When resuming from a trigger-fired pause, disarm the trigger.
+   if (!paused && _triggerEnabled)
+   {
+      _triggerEnabled = false;
+      _triggerButton->setChecked(false);
+      emit triggerDisarmed();
+   }
+
+   safeUpdate(this);
+}
+
+bool OscilloscopeWidget::isPaused() const
+{
+   return _paused;
+}
+
+void OscilloscopeWidget::setTriggerEnabled(bool enabled)
+{
+   // Cannot arm trigger while paused.
+   if (enabled && _paused)
+   {
+      _triggerButton->setChecked(false);
+      return;
+   }
+
+   _triggerEnabled = enabled;
+   if (_triggerButton->isChecked() != enabled)
+   {
+      _triggerButton->setChecked(enabled);
+   }
+
+   if (enabled)
+   {
+      emit triggerArmed();
+   }
+   else
+   {
+      emit triggerDisarmed();
+   }
+   safeUpdate(this);
+}
+
+void OscilloscopeWidget::setTriggerLevel(float level)
+{
+   _triggerLevel = level;
+   safeUpdate(this);
+}
+
+bool OscilloscopeWidget::isTriggerEnabled() const
+{
+   return _triggerEnabled;
+}
+
+float OscilloscopeWidget::triggerLevel() const
+{
+   return _triggerLevel;
+}
+
 QSize OscilloscopeWidget::minimumSizeHint() const
 {
    return {250, 150};
@@ -110,6 +219,21 @@ void OscilloscopeWidget::paintEvent(QPaintEvent* /*event*/)
    }
    drawTraces(painter, plotArea);
    drawLegend(painter, plotArea);
+
+   if (_triggerEnabled || _paused)
+   {
+      drawTriggerLine(painter, plotArea);
+   }
+
+   if (_paused)
+   {
+      painter.setPen(QColor(255, 100, 50, 200));
+      QFont font = painter.font();
+      font.setPointSize(9);
+      font.setBold(true);
+      painter.setFont(font);
+      painter.drawText(plotArea.left() + 6, plotArea.top() + 16, "PAUSED");
+   }
 }
 
 void OscilloscopeWidget::wheelEvent(QWheelEvent* event)
@@ -125,11 +249,56 @@ void OscilloscopeWidget::wheelEvent(QWheelEvent* event)
       return;
    }
 
+   const bool overYAxis = event->position().x() < MARGIN_LEFT;
+   const bool overXAxis = event->position().y() > (height() - MARGIN_BOTTOM);
+
+   // Over the time axis: zoom the time span.
+   if (overXAxis)
+   {
+      constexpr std::size_t MIN_TIME_SPAN = 16;
+      constexpr std::size_t MAX_TIME_SPAN = 65536;
+      constexpr float TIME_ZOOM_FACTOR = 1.15F;
+      const float factor = (deltaY > 0) ? (1.0F / TIME_ZOOM_FACTOR)
+                                         : TIME_ZOOM_FACTOR;
+      auto newSpan = static_cast<std::size_t>(
+         static_cast<float>(_timeSpan) * factor);
+      _timeSpan = std::clamp(newSpan, MIN_TIME_SPAN, MAX_TIME_SPAN);
+      update();
+      event->accept();
+      return;
+   }
+
+   // When trigger is armed, scroll adjusts the trigger level instead
+   // (unless the mouse is over the Y axis, where scroll always zooms).
+   if (_triggerEnabled && !overYAxis)
+   {
+      constexpr float STEP = 0.02F;
+      const float delta = (deltaY > 0) ? STEP : -STEP;
+      _triggerLevel = std::clamp(_triggerLevel + delta, 0.01F, _axisRange);
+      update();
+      event->accept();
+      return;
+   }
+
    const float factor = (deltaY > 0) ? (1.0F / ZOOM_FACTOR) : ZOOM_FACTOR;
    _axisRange = std::clamp(_axisRange * factor, MIN_AXIS_RANGE, MAX_AXIS_RANGE);
 
    update();
    event->accept();
+}
+
+void OscilloscopeWidget::resizeEvent(QResizeEvent* event)
+{
+   QWidget::resizeEvent(event);
+   repositionButtons();
+}
+
+void OscilloscopeWidget::repositionButtons()
+{
+   const int rightEdge = width() - MARGIN_RIGHT - 2;
+   _pauseButton->move(rightEdge - _pauseButton->width(), MARGIN_TOP + 4);
+   _triggerButton->move(rightEdge - _pauseButton->width(),
+                        MARGIN_TOP + 4 + 4 + _pauseButton->height());
 }
 
 // ============================================================================
@@ -277,6 +446,48 @@ QPointF OscilloscopeWidget::mapToPixel(float sampleIdx, float amplitude,
                     (normY * static_cast<float>(area.height()));
 
    return {static_cast<qreal>(px), static_cast<qreal>(py)};
+}
+
+void OscilloscopeWidget::drawTriggerLine(QPainter& painter,
+                                         const QRect& area) const
+{
+   // Draw horizontal dashed lines at +threshold and -threshold.
+   QPen pen(QColor(68, 255, 68, 180), 1.5, Qt::DashLine);
+   painter.setPen(pen);
+
+   auto yFromAmp = [&](float amp) -> int
+   {
+      const float normY = 0.5F - (amp / (2.0F * _axisRange));
+      return area.top() + static_cast<int>(normY * static_cast<float>(area.height()));
+   };
+
+   const int yPos = yFromAmp(_triggerLevel);
+   const int yNeg = yFromAmp(-_triggerLevel);
+   painter.drawLine(area.left(), yPos, area.right(), yPos);
+   painter.drawLine(area.left(), yNeg, area.right(), yNeg);
+
+   // Label
+   QFont font = painter.font();
+   font.setPointSize(8);
+   painter.setFont(font);
+   painter.setPen(QColor(68, 255, 68, 220));
+   const QString label = QStringLiteral("T: ")
+                       + QString::number(static_cast<double>(_triggerLevel), 'f', 2);
+   painter.drawText(area.left() + 4, yPos - 3, label);
+}
+
+bool OscilloscopeWidget::checkTrigger()
+{
+   const std::lock_guard<std::mutex> lock(_mutex);
+   for (const auto& s : _samples)
+   {
+      if (std::abs(s.real()) > _triggerLevel
+          || std::abs(s.imag()) > _triggerLevel)
+      {
+         return true;
+      }
+   }
+   return false;
 }
 
 } // namespace RealTimeGraphs

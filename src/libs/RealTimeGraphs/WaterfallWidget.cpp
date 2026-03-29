@@ -20,11 +20,9 @@ namespace RealTimeGraphs
 // Construction
 // ============================================================================
 
-WaterfallWidget::WaterfallWidget(QWidget* parent, int historyRows)
+WaterfallWidget::WaterfallWidget(QWidget* parent, double maxAgeSec)
    : PlotWidgetBase(parent)
-   , _historyRows{historyRows}
-   , _rows(static_cast<std::size_t>(historyRows))
-   , _timestamps(static_cast<std::size_t>(historyRows))
+   , _maxAgeSec{maxAgeSec}
 {
    _colorBar = new ColorBarStrip(this);
    _colorBar->setDbRange(_minDb, _maxDb);
@@ -141,8 +139,9 @@ void WaterfallWidget::addRow(const std::vector<float>& magnitudes)
    {
       const std::lock_guard<std::mutex> lock(_mutex);
       _binCount = static_cast<int>(magnitudes.size());
-      _rows.push(normRow);
-      _timestamps.push(std::chrono::steady_clock::now());
+      _rows.push_back(normRow);
+      _timestamps.push_back(std::chrono::steady_clock::now());
+      pruneOldRows();
    }
    safeUpdate(this);
 }
@@ -179,6 +178,13 @@ void WaterfallWidget::setColorBarVisible(bool visible)
 {
    _colorBar->setVisible(visible);
    safeUpdate(this);
+}
+
+void WaterfallWidget::setMaxAge(double seconds)
+{
+   const std::lock_guard<std::mutex> lock(_mutex);
+   _maxAgeSec = seconds;
+   pruneOldRows();
 }
 
 std::optional<std::pair<float, float>> WaterfallWidget::getAmplitudeRange() const
@@ -439,6 +445,19 @@ void WaterfallWidget::leaveEvent(QEvent* event)
 // ============================================================================
 // Internals
 // ============================================================================
+
+void WaterfallWidget::pruneOldRows()
+{
+   // Caller must hold _mutex.
+   const auto now = std::chrono::steady_clock::now();
+   const auto maxAge = std::chrono::duration<double>(_maxAgeSec);
+   while (!_timestamps.empty()
+          && std::chrono::duration<double>(now - _timestamps.front()) > maxAge)
+   {
+      _rows.pop_front();
+      _timestamps.pop_front();
+   }
+}
 
 void WaterfallWidget::rebuildImage()
 {

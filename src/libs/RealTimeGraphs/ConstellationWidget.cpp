@@ -29,6 +29,10 @@ ConstellationWidget::ConstellationWidget(QWidget* parent, int historySize)
 
 void ConstellationWidget::setData(const std::vector<std::complex<float>>& samples)
 {
+   if (_paused)
+   {
+      return;
+   }
    constexpr std::size_t MAX_POINTS = 64;
 
    // Build an index list sorted by descending magnitude so we keep the
@@ -103,6 +107,17 @@ void ConstellationWidget::setFadeTime(float seconds)
 {
    _fadeTimeSec = std::clamp(seconds, 0.5F, 30.0F);
    safeUpdate(this);
+}
+
+void ConstellationWidget::setPaused(bool paused)
+{
+   _paused = paused;
+   safeUpdate(this);
+}
+
+bool ConstellationWidget::isPaused() const
+{
+   return _paused;
 }
 
 QSize ConstellationWidget::minimumSizeHint() const

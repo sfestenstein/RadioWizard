@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) // NOLINT
 
    // ---- Create widgets ----
    auto* spectrum = new RealTimeGraphs::SpectrumWidget;
-   auto* waterfall = new RealTimeGraphs::WaterfallWidget(nullptr, 256);
+   auto* waterfall = new RealTimeGraphs::WaterfallWidget(nullptr, 30.0);
    auto* constellation = new RealTimeGraphs::ConstellationWidget(nullptr, 8192);
 
    spectrum->setDbRange(-100.0F, 0.0F);
