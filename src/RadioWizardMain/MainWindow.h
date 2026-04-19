@@ -107,7 +107,7 @@ private:
    void updateDetailedSpectrum();
 
    // Identifies which backend + hardware index a combo entry refers to.
-   enum class DeviceBackend : uint8_t { RtlSdr, PlutoSdr };
+   enum class DeviceBackend : uint8_t { SoapySdr };
    struct DetectedDevice
    {
       DeviceBackend backend;

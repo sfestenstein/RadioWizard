@@ -142,15 +142,16 @@ find_package(liquid-dsp REQUIRED)
 message(STATUS "Found liquid-dsp")
 
 # System dependencies (not available via Conan)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(RTLSDR REQUIRED IMPORTED_TARGET librtlsdr)
-message(STATUS "Found librtlsdr: ${RTLSDR_VERSION}")
+find_package(SoapySDR REQUIRED)
+message(STATUS "Found SoapySDR: ${SoapySDR_VERSION}")
 
-pkg_check_modules(LIBIIO REQUIRED IMPORTED_TARGET libiio)
-message(STATUS "Found libiio: ${LIBIIO_VERSION}")
-
-pkg_check_modules(LIBAD9361 REQUIRED IMPORTED_TARGET libad9361)
-message(STATUS "Found libad9361: ${LIBAD9361_VERSION}")
+# SoapySDR is typically built with CMAKE_BUILD_TYPE="" (None), so the
+# imported target only has IMPORTED_LOCATION_NONE.  Map Debug and
+# RelWithDebInfo to NONE so CMake finds the library.
+set_target_properties(SoapySDR PROPERTIES
+   MAP_IMPORTED_CONFIG_DEBUG NONE
+   MAP_IMPORTED_CONFIG_RELWITHDEBINFO NONE
+)
 
 # Conan CMakeDeps generates Qt6Config.cmake which:
 #  1. Creates component targets (Qt6::Core, Qt6::Gui, Qt6::Widgets, …)
@@ -252,6 +253,6 @@ message(STATUS "  Coverage:         ${ENABLE_COVERAGE}")
 message(STATUS "  Sanitizers:       ${ENABLE_SANITIZERS}")
 message(STATUS "  Clang-tidy:       ${ENABLE_CLANG_TIDY}")
 message(STATUS "  Qt6:              ${Qt6_VERSION}")
-message(STATUS "  librtlsdr:        ${RTLSDR_VERSION}")
+message(STATUS "  SoapySDR:         ${SoapySDR_VERSION}")
 message(STATUS "================================")
 message(STATUS "")

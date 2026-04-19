@@ -17,7 +17,7 @@ graph TD
    end
 
    subgraph Libraries
-      SdrEngine["<b>SdrEngine</b><br/>ISdrDevice, RtlSdrDevice,<br/>FftProcessor, ChannelFilter,<br/>SdrEngine, SdrTypes"]
+      SdrEngine["<b>SdrEngine</b><br/>ISdrDevice, SoapySdrDevice,<br/>FftProcessor, ChannelFilter,<br/>SdrEngine, SdrTypes"]
       PubSub["<b>PubSub</b><br/>HighBandwidthPublisher,<br/>HighBandwidthSubscriber"]
       RTG["<b>RealTimeGraphs</b><br/>PlotWidgetBase, SpectrumWidget,<br/>WaterfallWidget, ConstellationWidget,<br/>ColorMap, ColorBarWidget,<br/>BandwidthSelector, PlotCursorOverlay"]
       Vita49["<b>Vita49_2</b><br/>PacketHeader, SignalDataPacket,<br/>ContextPacket, Vita49Codec,<br/>Vita49Types, ByteSwap"]
@@ -40,7 +40,7 @@ graph TD
       spdlog
       protobuf
       Qt6["Qt 6"]
-      FFTW3["FFTW3, liquid-dsp,<br/>librtlsdr"]
+      FFTW3["FFTW3, liquid-dsp,<br/>SoapySDR"]
    end
 
    %% Invisible edges to enforce vertical ordering
@@ -109,9 +109,10 @@ consumers.
   - Device-agnostic API for tuning, gain control, sample rate, and async streaming
   - Implementations wrap specific hardware APIs behind a common surface
 
-- **RtlSdrDevice**: Concrete ISdrDevice for RTL-SDR hardware:
-  - Wraps the librtlsdr C API
-  - Async streaming on a dedicated thread via `rtlsdr_read_async`
+- **SoapySdrDevice**: Vendor-neutral ISdrDevice using SoapySDR:
+  - Supports any hardware with a SoapySDR module (RTL-SDR, ADALM-PLUTO, HackRF, LimeSDR, etc.)
+  - Streaming on a dedicated thread via `SoapySDR::Device::readStream`
+  - CS16 format with conversion to uint8_t pairs for pipeline compatibility
 
 - **FftProcessor**: Windowed FFT processing:
   - Produces magnitude spectrum in dB using FFTW
@@ -131,8 +132,8 @@ consumers.
   - `IqSample` (complex float), `IqBuffer` (timestamped I/Q chunk with metadata),
     `SpectrumData` (FFT magnitude spectrum with metadata)
 
-Dependencies: FFTW3 (FFT), liquid-dsp (filters, NCO, resampling), librtlsdr (RTL-SDR
-hardware), CommonUtils.
+Dependencies: FFTW3 (FFT), liquid-dsp (filters, NCO, resampling), SoapySDR (vendor-neutral
+SDR hardware abstraction), CommonUtils.
 
 #### RealTimeGraphs Library (`src/libs/RealTimeGraphs/`)
 
@@ -290,7 +291,7 @@ Coverage is collected using gcov/lcov:
 
 Areas for potential enhancement:
 
-1. **Additional SDR Hardware Drivers**: Extend ISdrDevice with SoapySDR, USRP, or HackRF implementations alongside the existing RTL-SDR driver
+1. **Additional SDR Hardware Support**: Install additional SoapySDR modules for new hardware (USRP, Airspy, BladeRF, etc.) — no code changes needed
 2. **Signal Demodulation**: Implement demodulation chains (AM, FM, SSB, PSK, QAM, etc.) using the existing ChannelFilter and liquid-dsp infrastructure
 3. **Signal Isolation**: Automatic signal detection and isolation from wideband captures
 4. **Extended DSP Pipeline**: Expand the SdrEngine pipeline with additional processing stages (decimation chains, AGC, etc.)

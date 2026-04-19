@@ -3,8 +3,7 @@
 #include "AudioOutput.h"
 #include "Demodulator.h"
 #include "GeneralLogger.h"
-#include "PlutoSdrDevice.h"
-#include "RtlSdrDevice.h"
+#include "SoapySdrDevice.h"
 #include "SdrCommonUtils.h"
 
 // Generated UI header
@@ -270,6 +269,24 @@ void MainWindow::onStartStopToggled(bool checked)
          if (_refreshDevicesBtn != nullptr)
          {
             _refreshDevicesBtn->setEnabled(false);
+         }
+
+         // Read back the device's gain range and current gain so the slider
+         // matches what the hardware actually has.
+         const auto gainSteps = _engine.getGainValues();
+         if (!gainSteps.empty())
+         {
+            _ui->_gainSlider->setRange(gainSteps.front(), gainSteps.back());
+         }
+         const int currentGain = _engine.getGain();
+         _ui->_gainSlider->blockSignals(true);
+         _ui->_gainSlider->setValue(currentGain);
+         _ui->_gainSlider->blockSignals(false);
+         if (!_ui->_autoGainCheckBox->isChecked())
+         {
+            _ui->_gainValueLabel->setText(
+               QString::number(static_cast<double>(currentGain) / 10.0, 'f', 1)
+               + " dB");
          }
       }
       else
@@ -885,25 +902,13 @@ void MainWindow::refreshDevices()
    _deviceCombo->clear();
    _detectedDevices.clear();
 
-   // Scan RTL-SDR devices.
+   // Scan all SoapySDR devices (RTL-SDR, Pluto, HackRF, etc.)
    {
-      const SdrEngine::RtlSdrDevice probe;
+      const SdrEngine::SoapySdrDevice probe;
       for (auto& info : probe.enumerateDevices())
       {
          DetectedDevice entry;
-         entry.backend = DeviceBackend::RtlSdr;
-         entry.info    = std::move(info);
-         _detectedDevices.push_back(std::move(entry));
-      }
-   }
-
-   // Scan ADALM-PLUTO devices.
-   {
-      const SdrEngine::PlutoSdrDevice probe;
-      for (auto& info : probe.enumerateDevices())
-      {
-         DetectedDevice entry;
-         entry.backend = DeviceBackend::PlutoSdr;
+         entry.backend = DeviceBackend::SoapySdr;
          entry.info    = std::move(info);
          _detectedDevices.push_back(std::move(entry));
       }
@@ -912,17 +917,7 @@ void MainWindow::refreshDevices()
    // Populate the combo box.
    for (const auto& dev : _detectedDevices)
    {
-      QString label;
-      if (dev.backend == DeviceBackend::RtlSdr)
-      {
-         label = QString("RTL-SDR: %1")
-                    .arg(QString::fromStdString(dev.info.name));
-      }
-      else
-      {
-         label = QString("Pluto: %1")
-                    .arg(QString::fromStdString(dev.info.name));
-      }
+      QString label = QString::fromStdString(dev.info.name);
       if (!dev.info.serial.empty())
       {
          label += QString(" [%1]").arg(
@@ -961,12 +956,6 @@ void MainWindow::applyDeviceSelection(int comboIndex)
    }
 
    const auto& dev = _detectedDevices[static_cast<std::size_t>(comboIndex)];
-   if (dev.backend == DeviceBackend::RtlSdr)
-   {
-      _engine.setDevice(std::make_unique<SdrEngine::RtlSdrDevice>());
-   }
-   else
-   {
-      _engine.setDevice(std::make_unique<SdrEngine::PlutoSdrDevice>());
-   }
+   static_cast<void>(dev); // All devices use SoapySDR now.
+   _engine.setDevice(std::make_unique<SdrEngine::SoapySdrDevice>());
 }

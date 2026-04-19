@@ -14,11 +14,11 @@ namespace SdrEngine
 {
 
 /**
- * @brief Callback invoked by the device when a block of raw I/Q bytes arrives.
- * @param data     Pointer to interleaved uint8_t I/Q pairs (RTL-SDR format).
- * @param length   Number of bytes (each pair is 2 bytes: I then Q).
+ * @brief Callback invoked by the device when a block of I/Q samples arrives.
+ * @param samples    Pointer to complex float I/Q samples.
+ * @param numSamples Number of complex samples in the block.
  */
-using RawIqCallback = std::function<void(const uint8_t* data, std::size_t length)>;
+using IqCallback = std::function<void(const IqSample* samples, std::size_t numSamples)>;
 
 /**
  * @class ISdrDevice
@@ -107,13 +107,13 @@ public:
 
    /**
     * @brief Start asynchronous streaming.  The callback will be invoked from a
-    * device I/O thread with raw 8-bit unsigned I/Q pairs.
-    * @param callback  Function to receive raw data blocks.
-    * @param bufferSize  Requested buffer size per callback invocation (bytes).
+    * device I/O thread with complex float I/Q samples.
+    * @param callback     Function to receive I/Q sample blocks.
+    * @param bufferSize   Requested number of samples per callback invocation.
     * @return true if streaming started successfully.
     */
-   [[nodiscard]] virtual bool startStreaming(RawIqCallback callback,
-                                            std::size_t bufferSize = 16384) = 0;
+   [[nodiscard]] virtual bool startStreaming(IqCallback callback,
+                                            std::size_t bufferSize = 8192) = 0;
 
    /** @brief Stop asynchronous streaming. */
    virtual void stopStreaming() = 0;

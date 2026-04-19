@@ -37,9 +37,7 @@ jobs:
             ninja-build \
             python3-pip \
             lcov \
-            librtlsdr-dev \
-            libiio-dev \
-            libad9361-dev \
+            libsoapysdr-dev \
             libgl-dev \
             xkb-data
 
@@ -104,31 +102,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          brew install cmake ninja protobuf librtlsdr libusb libxml2
-
-      - name: Build and install libiio from source
-        run: |
-          git clone --depth 1 --branch v0.26 https://github.com/analogdevicesinc/libiio.git /tmp/libiio
-          cmake -S /tmp/libiio -B /tmp/libiio/build \
-            -DCMAKE_INSTALL_PREFIX="$(brew --prefix)" \
-            -DOSX_FRAMEWORK=OFF \
-            -DOSX_PACKAGE=OFF \
-            -DWITH_TESTS=OFF
-          cmake --build /tmp/libiio/build --target iio
-          cmake --install /tmp/libiio/build
-
-      - name: Build and install libad9361 from source
-        run: |
-          git clone --depth 1 https://github.com/analogdevicesinc/libad9361-iio.git /tmp/libad9361
-          cmake -S /tmp/libad9361 -B /tmp/libad9361/build \
-            -DCMAKE_INSTALL_PREFIX="$(brew --prefix)" \
-            -DOSX_FRAMEWORK=OFF \
-            -DCMAKE_FIND_FRAMEWORK=NEVER \
-            -DLIBIIO_LIBRARIES="$(brew --prefix)/lib/libiio.dylib" \
-            -DLIBIIO_INCLUDEDIR="$(brew --prefix)/include" \
-            -DBUILD_TESTS=OFF
-          cmake --build /tmp/libad9361/build
-          cmake --install /tmp/libad9361/build
+          brew install cmake ninja soapysdr
 
       - name: Install Conan
         run: |

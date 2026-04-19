@@ -249,10 +249,10 @@ bool SdrEngine::start(int deviceIndex)
    _running = true;
    _procThread = std::thread(&SdrEngine::processingLoop, this);
 
-   // Start streaming — the raw callback feeds the accumulation buffer.
-   const auto bufSize = static_cast<std::size_t>(_fft.getFftSize()) * 2;
+   // Start streaming — the callback feeds the accumulation buffer.
+   const auto bufSize = static_cast<std::size_t>(_fft.getFftSize());
    if (!_device->startStreaming(
-          [this](const uint8_t* data, std::size_t len) { onRawIqData(data, len); },
+          [this](const IqSample* samples, std::size_t n) { onIqData(samples, n); },
           bufSize))
    {
       GPERROR("Failed to start streaming");
@@ -329,22 +329,10 @@ CommonUtils::DataHandler<std::shared_ptr<const IqBuffer>>& SdrEngine::filteredIq
 // Device callback → accumulation buffer
 // ============================================================================
 
-void SdrEngine::onRawIqData(const uint8_t* data, std::size_t length)
+void SdrEngine::onIqData(const IqSample* samples, std::size_t numSamples)
 {
-   // RTL-SDR delivers unsigned 8-bit I/Q pairs.  Convert to float [-1, 1].
-   const std::size_t numSamples = length / 2;
-
-   std::vector<std::complex<float>> chunk;
-   chunk.reserve(numSamples);
-
-   for (std::size_t i = 0; i < numSamples; ++i)
-   {
-      const auto iVal =
-         (static_cast<float>(data[2 * i])     - 127.5F) / 127.5F;
-      const auto qVal =
-         (static_cast<float>(data[(2 * i) + 1]) - 127.5F) / 127.5F;
-      chunk.emplace_back(iVal, qVal);
-   }
+   // Samples arrive as complex float directly from the device.
+   std::vector<std::complex<float>> chunk(samples, samples + numSamples);
 
    // Remove DC offset if enabled (suppresses LO leakage spike).
    if (_dcSpikeRemovalEnabled && !chunk.empty())

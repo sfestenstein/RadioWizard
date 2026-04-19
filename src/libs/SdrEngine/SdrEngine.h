@@ -220,7 +220,7 @@ public:
 
 private:
    // Called from the device's async callback thread.
-   void onRawIqData(const uint8_t* data, std::size_t length);
+   void onIqData(const IqSample* samples, std::size_t numSamples);
 
    // Processing thread body.
    void processingLoop();

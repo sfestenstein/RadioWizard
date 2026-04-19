@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "SdrEngine.h"
-#include "RtlSdrDevice.h"
+#include "SoapySdrDevice.h"
 #include "SdrTypes.h"
 
 #include <memory>
@@ -73,7 +73,7 @@ TEST(SdrEngineTest, SetWindowFunction_ChangesFunction)
 TEST(SdrEngineTest, SetDevice_DeviceIsAccessible)
 {
    SdrEngine::SdrEngine engine;
-   engine.setDevice(std::make_unique<SdrEngine::RtlSdrDevice>());
+   engine.setDevice(std::make_unique<SdrEngine::SoapySdrDevice>());
    EXPECT_NE(engine.getDevice(), nullptr);
 }
 

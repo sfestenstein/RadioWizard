@@ -95,12 +95,6 @@ cmake --build --preset coverage --target CommonUtilsCoverage
 # Main RadioWizard application (Qt GUI with SDR engine)
 ./build/debug/bin/RadioWizardMain
 
-# High-bandwidth UDP multicast pub/sub
-./build/debug/bin/HighBandwidthSubscriber  # In terminal 1
-./build/debug/bin/HighBandwidthPublisher   # In terminal 2
-
-# RealTimeGraphs interactive test
-./build/debug/bin/RealTimeGraphsTest
 ```
 
 ## Project Structure
@@ -198,7 +192,7 @@ System dependencies (not managed by Conan):
 
 | Package | Purpose |
 |---------|---------|
-| librtlsdr | RTL-SDR hardware driver library (SdrEngine) |
+| SoapySDR | Vendor-neutral SDR hardware abstraction (SdrEngine) |
 
 ## License
 

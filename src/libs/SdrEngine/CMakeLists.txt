@@ -27,7 +27,5 @@ target_link_libraries(${LIB_NAME}
    PRIVATE
       FFTW3::fftw3f
       liquid-dsp::liquid-dsp
-      PkgConfig::RTLSDR
-      PkgConfig::LIBIIO
-      PkgConfig::LIBAD9361
+      SoapySDR
 )

@@ -35,8 +35,11 @@ sudo apt-get install -y \
    libxcb-xkb-dev \
    libxrender-dev
 
-# RTL-SDR driver library (system dependency — not available via Conan)
-sudo apt-get install -y librtlsdr-dev
+# RTL-SDR, Pluto SDR, etc. via SoapySDR abstraction layer
+sudo apt-get install -y libsoapysdr-dev
+
+# Install SoapySDR modules for your hardware (optional)
+# sudo apt-get install -y soapysdr-module-rtlsdr soapysdr-module-plutosdr
 
 pip3 install conan
 ```
@@ -50,8 +53,11 @@ xcode-select --install
 # Install Homebrew packages
 brew install cmake ninja python lcov
 
-# RTL-SDR driver library (system dependency — not available via Conan)
-brew install librtlsdr
+# SDR hardware via SoapySDR abstraction layer
+brew install soapysdr
+
+# Install SoapySDR modules for your hardware (optional)
+# brew install soapyrtlsdr soapyplutosdr
 
 pip3 install conan
 ```
