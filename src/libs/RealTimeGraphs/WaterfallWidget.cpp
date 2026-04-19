@@ -199,9 +199,8 @@ std::optional<std::pair<float, float>> WaterfallWidget::getAmplitudeRange() cons
    float minNorm = std::numeric_limits<float>::max();
    float maxNorm = std::numeric_limits<float>::lowest();
 
-   for (std::size_t i = 0; i < _rows.size(); ++i)
+   for (const auto & row : _rows)
    {
-      const auto& row = _rows[i];
       if (!row.empty())
       {
          const auto [rowMin, rowMax] = std::ranges::minmax_element(row);

@@ -54,14 +54,14 @@ void drawRectangularGrid(QPainter& painter, const QRect& area,
    // Horizontal lines
    for (int i = 1; i < hDivs; ++i)
    {
-      const int y = area.top() + (i * area.height()) / hDivs;
+      const int y = area.top() + ((i * area.height()) / hDivs);
       painter.drawLine(area.left(), y, area.right(), y);
    }
 
    // Vertical lines
    for (int i = 1; i < vDivs; ++i)
    {
-      const int x = area.left() + (i * area.width()) / vDivs;
+      const int x = area.left() + ((i * area.width()) / vDivs);
       painter.drawLine(x, area.top(), x, area.bottom());
    }
 
@@ -69,13 +69,13 @@ void drawRectangularGrid(QPainter& painter, const QRect& area,
    if (drawZeroH)
    {
       painter.setPen(QPen(ZERO_CLR, 1, Qt::SolidLine));
-      const int y = area.top() + area.height() / 2;
+      const int y = area.top() + (area.height() / 2);
       painter.drawLine(area.left(), y, area.right(), y);
    }
    if (drawZeroV)
    {
       painter.setPen(QPen(ZERO_CLR, 1, Qt::SolidLine));
-      const int x = area.left() + area.width() / 2;
+      const int x = area.left() + (area.width() / 2);
       painter.drawLine(x, area.top(), x, area.bottom());
    }
 }

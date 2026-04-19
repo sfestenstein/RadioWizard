@@ -3,12 +3,16 @@
 #include "GeneralLogger.h"
 
 // Third-party headers
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcpp"
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Types.hpp>
 #include <SoapySDR/Version.hpp>
+#pragma GCC diagnostic pop
 
 // System headers
+#include <algorithm>
 #include <cmath>
 #include <utility>
 
@@ -252,7 +256,7 @@ std::vector<int> SoapySdrDevice::getGainValues() const
    const int maxDb = static_cast<int>(std::ceil(range.maximum()));
 
    std::vector<int> gains;
-   gains.reserve(static_cast<std::size_t>(maxDb - minDb + 1));
+   gains.reserve(static_cast<std::size_t>(std::max(0, maxDb - minDb + 1)));
    for (int db = minDb; db <= maxDb; ++db)
    {
       gains.push_back(db * 10);   // tenths-of-dB

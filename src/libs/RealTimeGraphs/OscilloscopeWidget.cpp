@@ -452,7 +452,7 @@ void OscilloscopeWidget::drawTriggerLine(QPainter& painter,
                                          const QRect& area) const
 {
    // Draw horizontal dashed lines at +threshold and -threshold.
-   QPen pen(QColor(68, 255, 68, 180), 1.5, Qt::DashLine);
+   const QPen pen(QColor(68, 255, 68, 180), 1.5, Qt::DashLine);
    painter.setPen(pen);
 
    auto yFromAmp = [&](float amp) -> int
@@ -479,15 +479,11 @@ void OscilloscopeWidget::drawTriggerLine(QPainter& painter,
 bool OscilloscopeWidget::checkTrigger()
 {
    const std::lock_guard<std::mutex> lock(_mutex);
-   for (const auto& s : _samples)
+   return std::ranges::any_of(_samples, [this](const std::complex<float>& s)
    {
-      if (std::abs(s.real()) > _triggerLevel
-          || std::abs(s.imag()) > _triggerLevel)
-      {
-         return true;
-      }
-   }
-   return false;
+      return std::abs(s.real()) > _triggerLevel
+             || std::abs(s.imag()) > _triggerLevel;
+   });
 }
 
 } // namespace RealTimeGraphs

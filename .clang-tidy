@@ -20,6 +20,7 @@ Checks: >
   -cert-err58-cpp,
   -misc-no-recursion,
   -misc-non-private-member-variables-in-classes,
+  -modernize-concat-nested-namespaces,
   -modernize-use-trailing-return-type,
   -modernize-pass-by-value,
   -modernize-use-scoped-lock,
