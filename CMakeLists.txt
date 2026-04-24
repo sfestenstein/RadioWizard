@@ -145,12 +145,14 @@ message(STATUS "Found liquid-dsp")
 find_package(SoapySDR REQUIRED)
 message(STATUS "Found SoapySDR: ${SoapySDR_VERSION}")
 
-# SoapySDR is typically built with CMAKE_BUILD_TYPE="" (None), so the
-# imported target only has IMPORTED_LOCATION_NONE.  Map Debug and
-# RelWithDebInfo to NONE so CMake finds the library.
+# SoapySDR's imported target only has a single configuration, which varies
+# by platform: Homebrew (macOS) ships it as "Release", while Debian/Ubuntu
+# packages build it with CMAKE_BUILD_TYPE="" ("None").  Map Debug and
+# RelWithDebInfo to both so CMake can locate the library regardless of
+# which package provided it.
 set_target_properties(SoapySDR PROPERTIES
-   MAP_IMPORTED_CONFIG_DEBUG NONE
-   MAP_IMPORTED_CONFIG_RELWITHDEBINFO NONE
+   MAP_IMPORTED_CONFIG_DEBUG "Release;None"
+   MAP_IMPORTED_CONFIG_RELWITHDEBINFO "Release;None"
 )
 
 # Conan CMakeDeps generates Qt6Config.cmake which:
