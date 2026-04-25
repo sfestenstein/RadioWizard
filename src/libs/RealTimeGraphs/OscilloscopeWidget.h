@@ -1,11 +1,10 @@
 #ifndef OSCILLOSCOPEWIDGET_H_
 #define OSCILLOSCOPEWIDGET_H_
 
-// Project headers
-#include "CircularBuffer.h"
-
 // Third-party headers
+#include <QPointF>
 #include <QPushButton>
+#include <QTimer>
 #include <QWidget>
 
 // System headers
@@ -93,6 +92,9 @@ protected:
    void paintEvent(QPaintEvent* event) override;
    void wheelEvent(QWheelEvent* event) override;
    void resizeEvent(QResizeEvent* event) override;
+   void mousePressEvent(QMouseEvent* event) override;
+   void mouseMoveEvent(QMouseEvent* event) override;
+   void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
    void drawGrid(QPainter& painter, const QRect& area) const;
@@ -100,28 +102,60 @@ private:
    void drawLegend(QPainter& painter, const QRect& area);
    void drawTriggerLine(QPainter& painter, const QRect& area) const;
 
-   // Map a (sampleIndex, amplitude) to pixel within the plot area.
-   [[nodiscard]] QPointF mapToPixel(float sampleIdx, float amplitude,
-                                    const QRect& area) const;
-   void repositionButtons();
+   // Render a single trace (I or Q) using envelope or polyline mode
+   // depending on samples-per-pixel.  Caller must already hold _mutex.
+   template <typename ComponentFn>
+   void drawOneTrace(QPainter& painter, const QRect& area,
+                     std::size_t viewBegin, std::size_t viewEnd,
+                     ComponentFn component, const QColor& color);
 
-   // Check whether any sample in the current data exceeds the trigger level.
-   [[nodiscard]] bool checkTrigger();
+   [[nodiscard]] qreal yFromAmp(float amp, const QRect& area) const;
+   void repositionButtons();
+   void clampViewOffsetLocked();  // caller must hold _mutex
+
+   // Check whether any sample in an incoming batch exceeds the trigger level.
+   [[nodiscard]] bool checkTrigger(
+      const std::vector<std::complex<float>>& incoming) const;
+
+   // Deep capture ring buffer.  Separates "what is stored" (capacity)
+   // from "what is displayed" (_timeSpan + _viewOffset), so pausing and
+   // zooming in reveals samples captured at full rate.
+   static constexpr std::size_t CAPTURE_CAPACITY = 1U << 20;  // ~1M samples
 
    std::mutex _mutex;
-   bool _paused{false};
-   bool _triggerEnabled{false};
-   float _triggerLevel{0.5F};
-   QPushButton* _pauseButton{nullptr};
-   QPushButton* _triggerButton{nullptr};
-   std::vector<std::complex<float>> _samples;
+   std::vector<std::complex<float>> _capture;  // ring, size == capacity
+   std::size_t _captureHead{0};                // next write index
+   std::size_t _captureSize{0};                // valid element count
 
-   float _axisRange{1.0F};
+   // Display view
    std::size_t _timeSpan{512};
+   std::size_t _viewOffset{0};   // samples back from newest (pan)
+   float _axisRange{1.0F};
    bool _iTraceEnabled{true};
    bool _qTraceEnabled{true};
    double _sampleRateHz{2'400'000.0};
    bool _gridEnabled{true};
+
+   // State
+   bool _paused{false};
+   bool _triggerEnabled{false};
+   float _triggerLevel{0.5F};
+
+   // Panning (only active while paused)
+   bool _dragging{false};
+   int _dragStartX{0};
+   std::size_t _dragStartOffset{0};
+
+   // UI
+   QPushButton* _pauseButton{nullptr};
+   QPushButton* _triggerButton{nullptr};
+
+   // Repaint throttling: setData() sets _dirty; timer at ~60 Hz repaints.
+   QTimer* _repaintTimer{nullptr};
+   bool _dirty{false};
+
+   // Scratch buffer reused across paints to avoid per-frame allocation.
+   std::vector<QPointF> _scratch;
 
    QColor _iColor{0, 200, 255};    // Cyan for I
    QColor _qColor{255, 100, 50};   // Orange-red for Q

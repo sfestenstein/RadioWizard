@@ -1,13 +1,16 @@
 #include "OscilloscopeWidget.h"
 #include "CommonGuiUtils.h"
 
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QResizeEvent>
+#include <QTimer>
 #include <QWheelEvent>
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace RealTimeGraphs
 {
@@ -48,6 +51,23 @@ OscilloscopeWidget::OscilloscopeWidget(QWidget* parent)
    _triggerButton->setCheckable(true);
    connect(_triggerButton, &QPushButton::toggled, this,
            &OscilloscopeWidget::setTriggerEnabled);
+
+   _capture.resize(CAPTURE_CAPACITY);
+   _scratch.reserve(4096);
+
+   // Repaint at most ~60 Hz regardless of incoming data rate.
+   _repaintTimer = new QTimer(this);
+   _repaintTimer->setTimerType(Qt::PreciseTimer);
+   _repaintTimer->setInterval(16);   // ~60 Hz
+   connect(_repaintTimer, &QTimer::timeout, this, [this]()
+   {
+      if (_dirty)
+      {
+         _dirty = false;
+         update();
+      }
+   });
+   _repaintTimer->start();
 }
 
 // ============================================================================
@@ -56,34 +76,47 @@ OscilloscopeWidget::OscilloscopeWidget(QWidget* parent)
 
 void OscilloscopeWidget::setData(const std::vector<std::complex<float>>& samples)
 {
-   if (_paused)
-   {
-      return;
-   }
-   {
-      const std::lock_guard<std::mutex> lock(_mutex);
-
-      // Keep only the last _timeSpan samples.
-      if (samples.size() <= _timeSpan)
-      {
-         _samples = samples;
-      }
-      else
-      {
-         const auto offset = samples.size() - _timeSpan;
-         _samples.assign(samples.begin() + static_cast<std::ptrdiff_t>(offset),
-                         samples.end());
-      }
-   }
-
-   // Trigger check: if armed, test whether any sample exceeds the threshold.
-   if (_triggerEnabled && checkTrigger())
+   // Trigger check scans the incoming batch directly (lock-free).
+   if (!_paused && _triggerEnabled && checkTrigger(samples))
    {
       setPaused(true);
       emit triggerFired();
    }
 
-   safeUpdate(this);
+   if (_paused || samples.empty())
+   {
+      return;
+   }
+
+   {
+      const std::lock_guard<std::mutex> lock(_mutex);
+
+      // Append into the ring.  If the incoming batch is larger than the
+      // ring, keep only its tail.
+      const auto* src = samples.data();
+      auto n = samples.size();
+      if (n >= CAPTURE_CAPACITY)
+      {
+         src += (n - CAPTURE_CAPACITY);
+         n = CAPTURE_CAPACITY;
+      }
+
+      const auto tailSpace = CAPTURE_CAPACITY - _captureHead;
+      const auto first = std::min(n, tailSpace);
+      std::copy(src, src + first, _capture.begin()
+                + static_cast<std::ptrdiff_t>(_captureHead));
+      if (n > first)
+      {
+         std::copy(src + first, src + n, _capture.begin());
+      }
+      _captureHead = (_captureHead + n) % CAPTURE_CAPACITY;
+      _captureSize = std::min(CAPTURE_CAPACITY, _captureSize + n);
+
+      // Live view always anchors to the newest sample.
+      _viewOffset = 0;
+   }
+
+   _dirty = true;  // coalesced by the 60 Hz repaint timer
 }
 
 void OscilloscopeWidget::setAxisRange(float range)
@@ -94,7 +127,11 @@ void OscilloscopeWidget::setAxisRange(float range)
 
 void OscilloscopeWidget::setTimeSpan(std::size_t sampleCount)
 {
-   _timeSpan = std::max<std::size_t>(16, sampleCount);
+   {
+      const std::lock_guard<std::mutex> lock(_mutex);
+      _timeSpan = std::clamp<std::size_t>(sampleCount, 16, CAPTURE_CAPACITY);
+      clampViewOffsetLocked();
+   }
    safeUpdate(this);
 }
 
@@ -131,6 +168,13 @@ void OscilloscopeWidget::setPaused(bool paused)
    }
    _pauseButton->setText(paused ? QStringLiteral("\u25B6")
                                 : QStringLiteral("\u23F8"));
+
+   // When resuming, snap the view back to the newest sample.
+   if (!paused)
+   {
+      const std::lock_guard<std::mutex> lock(_mutex);
+      _viewOffset = 0;
+   }
 
    // When resuming from a trigger-fired pause, disarm the trigger.
    if (!paused && _triggerEnabled)
@@ -256,13 +300,31 @@ void OscilloscopeWidget::wheelEvent(QWheelEvent* event)
    if (overXAxis)
    {
       constexpr std::size_t MIN_TIME_SPAN = 16;
-      constexpr std::size_t MAX_TIME_SPAN = 65536;
+      constexpr std::size_t MAX_TIME_SPAN = CAPTURE_CAPACITY;
       constexpr float TIME_ZOOM_FACTOR = 1.15F;
       const float factor = (deltaY > 0) ? (1.0F / TIME_ZOOM_FACTOR)
                                          : TIME_ZOOM_FACTOR;
       auto newSpan = static_cast<std::size_t>(
          static_cast<float>(_timeSpan) * factor);
-      _timeSpan = std::clamp(newSpan, MIN_TIME_SPAN, MAX_TIME_SPAN);
+      newSpan = std::clamp(newSpan, MIN_TIME_SPAN, MAX_TIME_SPAN);
+
+      {
+         const std::lock_guard<std::mutex> lock(_mutex);
+         const auto oldSpan = _timeSpan;
+         _timeSpan = newSpan;
+         // When paused, keep the center of the visible window fixed.
+         if (_paused && _captureSize > 0 && oldSpan != newSpan)
+         {
+            const long long oldCenter =
+               static_cast<long long>(_viewOffset) +
+               static_cast<long long>(oldSpan) / 2;
+            long long newOff = oldCenter -
+               static_cast<long long>(newSpan) / 2;
+            if (newOff < 0) newOff = 0;
+            _viewOffset = static_cast<std::size_t>(newOff);
+         }
+         clampViewOffsetLocked();
+      }
       update();
       event->accept();
       return;
@@ -358,43 +420,119 @@ void OscilloscopeWidget::drawTraces(QPainter& painter, const QRect& area)
 {
    const std::lock_guard<std::mutex> lock(_mutex);
 
-   const auto count = _samples.size();
-   if (count < 2)
+   if (_captureSize < 2)
    {
       return;
    }
 
-   // Build I and Q polylines
-   const auto numPoints = std::min(count, _timeSpan);
-   const auto startIdx = count - numPoints;
-
-   auto buildPolyline = [&](auto componentFn) -> QVector<QPointF>
+   // Compute the visible window in logical indices.
+   // Logical 0 = oldest stored sample, (_captureSize - 1) = newest.
+   const auto viewEnd = _captureSize - std::min(_viewOffset, _captureSize);
+   const auto numPoints = std::min(_timeSpan, viewEnd);
+   if (numPoints < 2)
    {
-      QVector<QPointF> points;
-      points.reserve(static_cast<qsizetype>(numPoints));
-      for (std::size_t i = 0; i < numPoints; ++i)
-      {
-         const auto sampleIdx = static_cast<float>(i);
-         const float amp = componentFn(_samples[startIdx + i]);
-         points.append(mapToPixel(sampleIdx, amp, area));
-      }
-      return points;
-   };
+      return;
+   }
+   const auto viewBegin = viewEnd - numPoints;
 
    if (_iTraceEnabled)
    {
-      const auto iPoints = buildPolyline(
-         [](const std::complex<float>& s) { return s.real(); });
-      painter.setPen(QPen(_iColor, 1.5));
-      painter.drawPolyline(iPoints.data(), static_cast<int>(iPoints.size()));
+      drawOneTrace(painter, area, viewBegin, viewEnd,
+                   [](const std::complex<float>& s) { return s.real(); },
+                   _iColor);
    }
-
    if (_qTraceEnabled)
    {
-      const auto qPoints = buildPolyline(
-         [](const std::complex<float>& s) { return s.imag(); });
-      painter.setPen(QPen(_qColor, 1.5));
-      painter.drawPolyline(qPoints.data(), static_cast<int>(qPoints.size()));
+      drawOneTrace(painter, area, viewBegin, viewEnd,
+                   [](const std::complex<float>& s) { return s.imag(); },
+                   _qColor);
+   }
+}
+
+template <typename ComponentFn>
+void OscilloscopeWidget::drawOneTrace(QPainter& painter, const QRect& area,
+                                      std::size_t viewBegin,
+                                      std::size_t viewEnd,
+                                      ComponentFn component,
+                                      const QColor& color)
+{
+   const auto numPoints = viewEnd - viewBegin;
+   const int W = area.width();
+   if (W <= 0 || numPoints < 2)
+   {
+      return;
+   }
+
+   // Map logical index -> physical ring index.
+   const auto oldest = (_captureSize < CAPTURE_CAPACITY) ? 0U : _captureHead;
+   auto physIdx = [this, oldest](std::size_t logical)
+   {
+      return (oldest + logical) % CAPTURE_CAPACITY;
+   };
+
+   const double spp = static_cast<double>(numPoints) /
+                      static_cast<double>(W);
+
+   painter.setPen(QPen(color, 1.5));
+
+   constexpr double ENVELOPE_SPP = 2.0;
+
+   if (spp > ENVELOPE_SPP)
+   {
+      // Envelope: one min + one max per pixel column.
+      _scratch.resize(static_cast<std::size_t>(W) * 2);
+      std::size_t out = 0;
+      for (int x = 0; x < W; ++x)
+      {
+         auto s0 = viewBegin + static_cast<std::size_t>(
+                                  static_cast<double>(x) * spp);
+         auto s1 = viewBegin + static_cast<std::size_t>(
+                                  static_cast<double>(x + 1) * spp);
+         if (s1 > viewEnd) s1 = viewEnd;
+         if (s1 <= s0) continue;
+
+         float mn = std::numeric_limits<float>::infinity();
+         float mx = -std::numeric_limits<float>::infinity();
+         for (auto i = s0; i < s1; ++i)
+         {
+            const float v = component(_capture[physIdx(i)]);
+            if (v < mn) mn = v;
+            if (v > mx) mx = v;
+         }
+         const qreal px = static_cast<qreal>(area.left() + x);
+         _scratch[out++] = QPointF(px, yFromAmp(mx, area));
+         _scratch[out++] = QPointF(px, yFromAmp(mn, area));
+      }
+      painter.drawPolyline(_scratch.data(), static_cast<int>(out));
+   }
+   else
+   {
+      // Full-resolution polyline.
+      _scratch.resize(numPoints);
+      const qreal xScale = static_cast<qreal>(W) /
+                           static_cast<qreal>(numPoints - 1);
+      for (std::size_t i = 0; i < numPoints; ++i)
+      {
+         const float v = component(_capture[physIdx(viewBegin + i)]);
+         _scratch[i] = QPointF(
+            static_cast<qreal>(area.left()) +
+               static_cast<qreal>(i) * xScale,
+            yFromAmp(v, area));
+      }
+      painter.drawPolyline(_scratch.data(), static_cast<int>(numPoints));
+
+      // Dots at each sample when very zoomed in.
+      if (spp < 0.25)
+      {
+         painter.setBrush(color);
+         painter.setPen(Qt::NoPen);
+         for (const auto& pt : _scratch)
+         {
+            painter.drawEllipse(pt, 2.0, 2.0);
+         }
+         painter.setBrush(Qt::NoBrush);
+         painter.setPen(QPen(color, 1.5));
+      }
    }
 }
 
@@ -432,20 +570,11 @@ void OscilloscopeWidget::drawLegend(QPainter& painter, const QRect& area)
    }
 }
 
-QPointF OscilloscopeWidget::mapToPixel(float sampleIdx, float amplitude,
-                                       const QRect& area) const
+qreal OscilloscopeWidget::yFromAmp(float amp, const QRect& area) const
 {
-   // X: map sample index [0, _timeSpan) to plot width
-   const float normX = sampleIdx / static_cast<float>(_timeSpan);
-   const float px = static_cast<float>(area.left()) +
-                    (normX * static_cast<float>(area.width()));
-
-   // Y: map amplitude [-_axisRange, +_axisRange] to plot height (inverted)
-   const float normY = 0.5F - (amplitude / (2.0F * _axisRange));
-   const float py = static_cast<float>(area.top()) +
-                    (normY * static_cast<float>(area.height()));
-
-   return {static_cast<qreal>(px), static_cast<qreal>(py)};
+   const float normY = 0.5F - (amp / (2.0F * _axisRange));
+   return static_cast<qreal>(area.top()) +
+          static_cast<qreal>(normY) * static_cast<qreal>(area.height());
 }
 
 void OscilloscopeWidget::drawTriggerLine(QPainter& painter,
@@ -455,14 +584,8 @@ void OscilloscopeWidget::drawTriggerLine(QPainter& painter,
    const QPen pen(QColor(68, 255, 68, 180), 1.5, Qt::DashLine);
    painter.setPen(pen);
 
-   auto yFromAmp = [&](float amp) -> int
-   {
-      const float normY = 0.5F - (amp / (2.0F * _axisRange));
-      return area.top() + static_cast<int>(normY * static_cast<float>(area.height()));
-   };
-
-   const int yPos = yFromAmp(_triggerLevel);
-   const int yNeg = yFromAmp(-_triggerLevel);
+   const int yPos = static_cast<int>(yFromAmp(_triggerLevel, area));
+   const int yNeg = static_cast<int>(yFromAmp(-_triggerLevel, area));
    painter.drawLine(area.left(), yPos, area.right(), yPos);
    painter.drawLine(area.left(), yNeg, area.right(), yNeg);
 
@@ -476,14 +599,87 @@ void OscilloscopeWidget::drawTriggerLine(QPainter& painter,
    painter.drawText(area.left() + 4, yPos - 3, label);
 }
 
-bool OscilloscopeWidget::checkTrigger()
+bool OscilloscopeWidget::checkTrigger(
+   const std::vector<std::complex<float>>& incoming) const
 {
-   const std::lock_guard<std::mutex> lock(_mutex);
-   return std::ranges::any_of(_samples, [this](const std::complex<float>& s)
+   return std::ranges::any_of(incoming, [this](const std::complex<float>& s)
    {
       return std::abs(s.real()) > _triggerLevel
              || std::abs(s.imag()) > _triggerLevel;
    });
+}
+
+void OscilloscopeWidget::clampViewOffsetLocked()
+{
+   const auto maxOff = (_captureSize > _timeSpan)
+                          ? (_captureSize - _timeSpan)
+                          : 0U;
+   if (_viewOffset > maxOff)
+   {
+      _viewOffset = maxOff;
+   }
+}
+
+// ============================================================================
+// Mouse: drag-to-pan while paused
+// ============================================================================
+
+void OscilloscopeWidget::mousePressEvent(QMouseEvent* event)
+{
+   if (_paused && event->button() == Qt::LeftButton)
+   {
+      _dragging = true;
+      _dragStartX = static_cast<int>(event->position().x());
+      {
+         const std::lock_guard<std::mutex> lock(_mutex);
+         _dragStartOffset = _viewOffset;
+      }
+      setCursor(Qt::ClosedHandCursor);
+      event->accept();
+      return;
+   }
+   QWidget::mousePressEvent(event);
+}
+
+void OscilloscopeWidget::mouseMoveEvent(QMouseEvent* event)
+{
+   if (_dragging)
+   {
+      const int plotW = width() - MARGIN_LEFT - MARGIN_RIGHT;
+      if (plotW > 0)
+      {
+         const std::lock_guard<std::mutex> lock(_mutex);
+         const auto visible = std::min(_timeSpan, _captureSize);
+         const double spp = static_cast<double>(visible) /
+                            static_cast<double>(plotW);
+         const int dx = static_cast<int>(event->position().x())
+                      - _dragStartX;
+         // Dragging right reveals earlier data, so offset increases.
+         const long long deltaSamples = static_cast<long long>(
+            static_cast<double>(dx) * spp);
+         long long newOff = static_cast<long long>(_dragStartOffset)
+                          + deltaSamples;
+         if (newOff < 0) newOff = 0;
+         _viewOffset = static_cast<std::size_t>(newOff);
+         clampViewOffsetLocked();
+      }
+      update();
+      event->accept();
+      return;
+   }
+   QWidget::mouseMoveEvent(event);
+}
+
+void OscilloscopeWidget::mouseReleaseEvent(QMouseEvent* event)
+{
+   if (_dragging && event->button() == Qt::LeftButton)
+   {
+      _dragging = false;
+      unsetCursor();
+      event->accept();
+      return;
+   }
+   QWidget::mouseReleaseEvent(event);
 }
 
 } // namespace RealTimeGraphs
