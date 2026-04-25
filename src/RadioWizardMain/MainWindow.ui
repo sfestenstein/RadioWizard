@@ -355,7 +355,84 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="RealTimeGraphs::ConstellationWidget" name="_constellationWidget" native="true"/>
+         <widget class="QWidget" name="_constellationContainer" native="true">
+          <layout class="QHBoxLayout" name="_constellationContainerLayout" stretch="1,0">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <item>
+            <widget class="RealTimeGraphs::ConstellationWidget" name="_constellationWidget" native="true"/>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="_constellationFadeLayout">
+             <item>
+              <widget class="QLabel" name="_constellationFadeLabel">
+               <property name="text">
+                <string>Fade
+5.0 s</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color: #B4B4BE; font-size: 9pt; }</string>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>24</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>24</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSlider" name="_constellationFadeSlider">
+               <property name="minimum">
+                <number>5</number>
+               </property>
+               <property name="maximum">
+                <number>300</number>
+               </property>
+               <property name="value">
+                <number>50</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Orientation::Vertical</enum>
+               </property>
+               <property name="toolTip">
+                <string>Persistence fade time
+0.5 s (bottom) – 30 s (top)</string>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>24</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <widget class="RealTimeGraphs::SpectrumWidget" name="_detailedSpectrumWidget" native="true"/>

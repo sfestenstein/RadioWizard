@@ -235,7 +235,6 @@ void ChannelFilter::createDspObjects()
       cutoffNorm,
       STOP_BAND_ATTEN,
       0.0F);   // fractional sample offset
-   firfilt_crcf_set_scale(_filter, 2.0F * cutoffNorm);  // unity passband gain
 
    // --- Arbitrary-rate resampler (decimator) ---
    const float resampRate = 1.0F / static_cast<float>(_decimationRate);

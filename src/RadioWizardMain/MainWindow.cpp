@@ -152,6 +152,20 @@ MainWindow::MainWindow(QWidget* parent)
            this, &MainWindow::onFftAverageChanged);
    connect(_ui->_dcSpikeRemovalCheckBox, &QCheckBox::toggled,
            this, &MainWindow::onDcSpikeRemovalToggled);
+
+   // Constellation persistence fade slider (tenths of a second; 0.5–30 s).
+   connect(_ui->_constellationFadeSlider, &QSlider::valueChanged,
+           this, [this](int val)
+           {
+              const float seconds = static_cast<float>(val) / 10.0F;
+              _ui->_constellationWidget->setFadeTime(seconds);
+              _ui->_constellationFadeLabel->setText(
+                 QString("Fade\n%1 s")
+                    .arg(static_cast<double>(seconds), 0, 'f', 1));
+           });
+   // Apply the initial slider value so the widget and label match.
+   _ui->_constellationWidget->setFadeTime(
+      static_cast<float>(_ui->_constellationFadeSlider->value()) / 10.0F);
    connect(_ui->_maxHoldCheckBox, &QCheckBox::toggled,
            _ui->_spectrurmWidget, &RealTimeGraphs::SpectrumWidget::setMaxHoldEnabled);
    connect(_ui->_bwCursorButton, &QPushButton::toggled,
@@ -454,17 +468,9 @@ void MainWindow::onBwCursorToggled(bool checked)
       // Clear the detailed spectrum widget.
       _ui->_detailedSpectrumWidget->setData({});
 
-      // Disconnect all IQ feeds and clear the constellation.
-      if (_filteredIqListenerId >= 0)
-      {
-         _engine.filteredIqDataHandler().unregisterListener(_filteredIqListenerId);
-         _filteredIqListenerId = -1;
-      }
-      if (_iqListenerId >= 0)
-      {
-         _engine.iqDataHandler().unregisterListener(_iqListenerId);
-         _iqListenerId = -1;
-      }
+      // Restore the full-spectrum (unfiltered) IQ feed to the
+      // constellation and oscilloscope.
+      switchToUnfilteredIq();
    }
 }
 
@@ -523,18 +529,10 @@ void MainWindow::onBwCursorUnlocked()
    stopDemod();
    updateDemodButtonState();
 
-   // Disconnect all IQ feeds and clear the constellation.
-   // The plot is not useful without a locked bandwidth selection.
-   if (_filteredIqListenerId >= 0)
-   {
-      _engine.filteredIqDataHandler().unregisterListener(_filteredIqListenerId);
-      _filteredIqListenerId = -1;
-   }
-   if (_iqListenerId >= 0)
-   {
-      _engine.iqDataHandler().unregisterListener(_iqListenerId);
-      _iqListenerId = -1;
-   }
+   // Restore the full-spectrum (unfiltered) IQ feed to the constellation
+   // and oscilloscope so the user keeps seeing data after clearing the
+   // bandwidth selection.
+   switchToUnfilteredIq();
 }
 
 void MainWindow::onBwCursorHalfWidthChanged(double halfWidthHz)
